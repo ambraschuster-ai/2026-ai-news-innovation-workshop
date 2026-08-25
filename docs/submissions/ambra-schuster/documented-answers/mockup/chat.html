@@ -1,0 +1,285 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Documented — resource assistant</title>
+<style>
+  :root {
+    --bg: #fbfaf8; --panel: #fff; --ink: #1a1a1a; --muted: #6b6b6b;
+    --line: #e5e2dc; --accent: #b03a2e; --user: #f0ede7; --chip: #f3f1ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16161a; --panel: #1e1e23; --ink: #ececec; --muted: #9a9a9a;
+      --line: #33333a; --accent: #e8735f; --user: #2a2a31; --chip: #26262c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, sans-serif;
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  header {
+    padding: .9rem 1.25rem; border-bottom: 1px solid var(--line);
+    background: var(--panel); display: flex; align-items: baseline; gap: .75rem;
+  }
+  header b { font-size: 1rem; }
+  header span { color: var(--muted); font-size: .8rem; }
+  header button {
+    margin-left: auto; background: none; border: 1px solid var(--line);
+    color: var(--muted); border-radius: 6px; padding: .25rem .6rem;
+    font-size: .78rem; cursor: pointer;
+  }
+  .banner {
+    background: #fdf6e6; border: 1px solid #ecdfb8; color: #5c4813;
+    padding: .8rem 1rem; font-size: .8rem; line-height: 1.5;
+    border-radius: 10px; margin-bottom: 1.5rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    .banner { background: #2a2416; border-color: #4a3f20; color: #e0cd9a; }
+  }
+  .banner p { margin: 0 0 .35rem; }
+  .banner p:last-child { margin-bottom: 0; }
+  .examples { display: flex; flex-direction: column; gap: .4rem; margin: .6rem 0 .9rem; }
+  .examples button {
+    text-align: left; background: var(--chip); border: 1px solid var(--line);
+    color: var(--ink); border-radius: 10px; padding: .5rem .8rem;
+    font: inherit; font-size: .88rem; cursor: pointer;
+  }
+  .examples button:hover { border-color: var(--accent); }
+  #log { flex: 1; overflow-y: auto; padding: 1.5rem 1.25rem; }
+  .wrap { max-width: 46rem; margin: 0 auto; }
+  .msg { margin-bottom: 1.5rem; }
+  .msg.you .body {
+    background: var(--user); padding: .7rem 1rem; border-radius: 14px;
+    display: inline-block; max-width: 85%;
+  }
+  .who {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted); margin-bottom: .35rem;
+  }
+  .body p { margin: 0 0 .7rem; }
+  .body ul { margin: .3rem 0 .8rem; padding-left: 1.15rem; }
+  .body li { margin-bottom: .35rem; }
+  .body a { color: var(--accent); }
+  .body strong { font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: .1rem 0 .7rem; }
+  .chip {
+    background: var(--chip); border: 1px solid var(--line); border-radius: 20px;
+    padding: .15rem .65rem; font-size: .75rem; color: var(--muted);
+  }
+  .sources {
+    margin-top: .9rem; padding-top: .7rem; border-top: 1px solid var(--line);
+    font-size: .8rem;
+  }
+  .sources div { margin-bottom: .3rem; color: var(--muted); }
+  .sources a { color: var(--accent); text-decoration: none; }
+  .sources a:hover { text-decoration: underline; }
+  .flag {
+    margin-top: .7rem; padding: .5rem .8rem; border-radius: 8px; font-size: .8rem;
+    background: #fdf0ed; color: #8a2a1e; border: 1px solid #f2cfc8;
+  }
+  @media (prefers-color-scheme: dark) {
+    .flag { background: #33211e; color: #f0a294; border-color: #5a332c; }
+  }
+  form {
+    border-top: 1px solid var(--line); background: var(--panel); padding: .9rem 1.25rem;
+  }
+  .inputrow { max-width: 46rem; margin: 0 auto; display: flex; gap: .6rem; }
+  textarea {
+    flex: 1; resize: none; font: inherit; padding: .65rem .85rem; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    max-height: 9rem;
+  }
+  button.send {
+    background: var(--accent); color: #fff; border: 0; border-radius: 10px;
+    padding: 0 1.2rem; font: inherit; cursor: pointer;
+  }
+  button.send:disabled { opacity: .45; cursor: default; }
+  .hint { max-width: 46rem; margin: .5rem auto 0; font-size: .72rem; color: var(--muted); }
+  .cursor::after {
+    content: "▍"; animation: blink 1s steps(2) infinite; color: var(--muted);
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+
+<header>
+  <b>Documented</b>
+  <span>resource assistant · mockup on 9 articles</span>
+  <button onclick="reset()">New conversation</button>
+</header>
+
+<div id="log"><div class="wrap" id="logwrap">
+  <div class="banner">
+    <p><b>A student prototype — not Documented's product, and not legal advice.</b></p>
+    <p>Built in an afternoon for a CUNY workshop. It has read <b>9 of Documented's
+    education articles</b> (6 English, 3 Spanish) and nothing else — not the rest
+    of their guide, not the internet, not the law. It is not affiliated with
+    Documented and they have not reviewed it.</p>
+    <p>For anything that actually matters, call <b>311</b> and ask for
+    <b>ActionNYC</b> — free immigration legal help, in your language.</p>
+  </div>
+  <div class="msg bot">
+    <div class="who">assistant</div>
+    <div class="body">
+      <p>Hi — I can look things up in nine articles Documented published about
+      schools, childcare and education in New York City. Ask me in English or
+      Spanish.</p>
+      <p>Those nine articles are all I know, so try me on something they cover:</p>
+      <div class="examples">
+        <button onclick="suggest(this)">I'm Colombian and have two kids. What do I need to know about schools in New York?</button>
+        <button onclick="suggest(this)">Where can my son get free help with homework after school?</button>
+        <button onclick="suggest(this)">¿Cómo inscribo a mi hija en Pre-K si no tengo papeles?</button>
+      </div>
+      <p style="color:var(--muted);font-size:.85rem">Ask about anything outside
+      those nine — rent, work permits, healthcare — and it should tell you it
+      doesn't have it. That refusal is the part worth testing.</p>
+    </div>
+  </div>
+</div></div>
+
+<form onsubmit="send(event)">
+  <div class="inputrow">
+    <textarea id="box" rows="1" placeholder="Ask something…"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){send(event)}"></textarea>
+    <button class="send" id="btn">Send</button>
+  </div>
+  <div class="hint">Answers come only from Documented's articles. Every link is
+    checked against what the search returned.</div>
+</form>
+
+<script>
+const log = document.getElementById('logwrap');
+const box = document.getElementById('box');
+const btn = document.getElementById('btn');
+
+// Just enough markdown for what the bot writes: links, bold, bullets.
+function render(md) {
+  const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const inline = s => esc(s)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+             '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
+
+  const out = [];
+  let list = null;
+  for (const line of md.split('\n')) {
+    const bullet = line.match(/^\s*[-*]\s+(.*)/);
+    if (bullet) {
+      if (!list) { list = []; }
+      list.push('<li>' + inline(bullet[1]) + '</li>');
+      continue;
+    }
+    if (list) { out.push('<ul>' + list.join('') + '</ul>'); list = null; }
+    if (line.trim()) out.push('<p>' + inline(line) + '</p>');
+  }
+  if (list) out.push('<ul>' + list.join('') + '</ul>');
+  return out.join('');
+}
+
+function bubble(who, cls) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + cls;
+  el.innerHTML = '<div class="who">' + who + '</div>'
+               + '<div class="chips"></div><div class="body"></div>';
+  log.appendChild(el);
+  scroll();
+  return el;
+}
+const scroll = () => { const l = document.getElementById('log'); l.scrollTop = l.scrollHeight; };
+
+async function send(e) {
+  e.preventDefault();
+  const text = box.value.trim();
+  if (!text || btn.disabled) return;
+  box.value = '';
+  btn.disabled = true;
+
+  bubble('you', 'you').querySelector('.body').textContent = text;
+  const el = bubble('assistant', 'bot');
+  const chips = el.querySelector('.chips');
+  const body = el.querySelector('.body');
+  body.classList.add('cursor');
+
+  let acc = '';
+  try {
+    const res = await fetch('/', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    });
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+      for (const part of parts) {
+        if (!part.startsWith('data: ')) continue;
+        const { kind, data } = JSON.parse(part.slice(6));
+
+        if (kind === 'search') {
+          const c = document.createElement('span');
+          c.className = 'chip';
+          c.textContent = 'searched: ' + data;
+          chips.appendChild(c);
+        } else if (kind === 'guardrail') {
+          const c = document.createElement('span');
+          c.className = 'chip';
+          c.textContent = 'safety rule: ' + data + ' — did not search';
+          chips.appendChild(c);
+        } else if (kind === 'limit') {
+          const c = document.createElement('span');
+          c.className = 'chip';
+          c.textContent = data === 'session' ? 'message limit reached' : 'daily limit reached';
+          chips.appendChild(c);
+        } else if (kind === 'text') {
+          acc += data;
+          body.innerHTML = render(acc);
+        } else if (kind === 'error') {
+          body.innerHTML = '<p style="color:var(--accent)">Error: ' + data + '</p>';
+        } else if (kind === 'done') {
+          if (data.sources.length) {
+            const s = document.createElement('div');
+            s.className = 'sources';
+            s.innerHTML = '<div><b>Sources</b></div>' + data.sources.map(x =>
+              '<div>· <a href="' + x.url + '" target="_blank" rel="noopener">'
+              + x.title + '</a> — ' + x.lang.toUpperCase()
+              + ', updated ' + x.last_updated + '</div>').join('');
+            el.appendChild(s);
+          }
+          for (const n of data.notes) {
+            const f = document.createElement('div');
+            f.className = 'flag';
+            f.textContent = '⚠ ' + n;
+            el.appendChild(f);
+          }
+        }
+        scroll();
+      }
+    }
+  } catch (err) {
+    body.innerHTML = '<p style="color:var(--accent)">Error: ' + err.message + '</p>';
+  }
+  body.classList.remove('cursor');
+  btn.disabled = false;
+  box.focus();
+  scroll();
+}
+
+function suggest(btn) {
+  box.value = btn.textContent.trim();
+  box.focus();
+}
+
+async function reset() {
+  await fetch('/reset', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
+  });
+  location.reload();
+}
+</script>

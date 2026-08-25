@@ -22,21 +22,25 @@ not this file.
 
 | Project | Status | Docs |
 |---|---|---|
-| **1 — Archive & audit** | **Active** | [requirements](documented-answers/project-1-archive-audit/requirements.md) · [architecture](documented-answers/project-1-archive-audit/architecture.md) · [tasks](documented-answers/project-1-archive-audit/tasks.md) |
+| 1 — Archive & audit | Paused (Stage 0.1 done) | [requirements](documented-answers/project-1-archive-audit/requirements.md) · [architecture](documented-answers/project-1-archive-audit/architecture.md) · [tasks](documented-answers/project-1-archive-audit/tasks.md) |
 | 2 — Freshness engine | Not started | [requirements](documented-answers/project-2-freshness-engine/requirements.md) · [architecture](documented-answers/project-2-freshness-engine/architecture.md) · [tasks](documented-answers/project-2-freshness-engine/tasks.md) |
-| 3 — Retrieval + answer engine | Not started | [requirements](documented-answers/project-3-answer-engine/requirements.md) · [architecture](documented-answers/project-3-answer-engine/architecture.md) · [tasks](documented-answers/project-3-answer-engine/tasks.md) |
+| **3 — Retrieval + answer engine** | **Active** — see `documented-answers/mockup/` | [requirements](documented-answers/project-3-answer-engine/requirements.md) · [architecture](documented-answers/project-3-answer-engine/architecture.md) · [tasks](documented-answers/project-3-answer-engine/tasks.md) |
 | 4 — Channels + voice | Not started | [requirements](documented-answers/project-4-channels-voice/requirements.md) · [architecture](documented-answers/project-4-channels-voice/architecture.md) · [tasks](documented-answers/project-4-channels-voice/tasks.md) |
 | 5 — Listening loop | Not started | [requirements](documented-answers/project-5-listening-loop/requirements.md) · [architecture](documented-answers/project-5-listening-loop/architecture.md) · [tasks](documented-answers/project-5-listening-loop/tasks.md) |
 
-**I'm only working on Project 1 right now.** Read Project 1's three files at
-the start of every session. Read another project's docs only when I say
-we're moving to it. Projects 2–5 are written at planning depth, so don't
-treat their details as settled — they get rewritten before that project
-starts.
+**Currently building Project 3**, as a working mockup in
+`documented-answers/mockup/` — a grounded chatbot over a hand-picked sample
+of Documented's education articles. Project 1 is paused after its Stage 0.1
+rescue; the rest of it is unstarted.
+
+Read the active project's three files at the start of every session, and
+another project's docs only when I say we're moving to it. Projects 2, 4 and
+5 are written at planning depth, so don't treat their details as settled —
+they get rewritten before that project starts.
 
 ### How to work against these files
 
-- **Before building anything**, propose a plan against Project 1's
+- **Before building anything**, propose a plan against the active project's
   `requirements.md` and `architecture.md`, and let me see it first. Don't
   start from your own read of what the project needs.
 - **Don't decide on your own that something looks done.** Check it against

@@ -4,3 +4,8 @@ node_modules/
 .env.local
 .DS_Store
 .claude/settings.local.json
+docs/submissions/ambra-schuster/documented-answers/mockup/.env
+# Documented article text pulled from documentedny.com -- their content, not
+# ours to republish. Supplied to the host as a Secret File instead.
+docs/submissions/ambra-schuster/documented-answers/mockup/corpus.json
+docs/submissions/ambra-schuster/documented-answers/mockup/.daily-count
