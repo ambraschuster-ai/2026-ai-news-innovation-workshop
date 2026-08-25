@@ -1,9 +1,14 @@
 ---
-name: chat_close
-description: End-of-session wrap-up for Ambra Schuster's Documented NY project in docs/submissions/ambra-schuster/. Updates the active sub-project's tasks.md (checkboxes, newly discovered work), amends requirements.md or architecture.md if scope or a technical decision changed, refreshes SUBMISSION.md so it reflects current project status, updates CLAUDE.md if it went stale, then splits the session's work into logical commits and pushes them to the current branch. Use when the user says they're wrapping up, switching tasks, done for now, or invokes /chat_close.
+name: chat_close_ambra
+description: End-of-session wrap-up for Ambra Schuster's Documented NY project in docs/submissions/ambra-schuster/. Updates the active sub-project's tasks.md (checkboxes, newly discovered work), amends requirements.md or architecture.md if scope or a technical decision changed, refreshes SUBMISSION.md so it reflects current project status, updates CLAUDE.md if it went stale, then splits the session's work into logical commits and pushes them to the current branch. Use when the user says they're wrapping up, switching tasks, done for now, or invokes /chat_close_ambra.
 ---
 
-# Chat close
+# Chat close (Ambra's)
+
+> Named `chat_close_ambra` so it can never be confused with the workshop's
+> own `/chat_close`, which belongs to Andrew and wraps up the site repo's
+> `project/` files. This one is only about
+> `docs/submissions/ambra-schuster/`.
 
 Run this at the end of a session, before switching tasks, so nothing worked
 on this session only lives in the conversation. Docs first, then commits, so
