@@ -1,6 +1,6 @@
 ---
 name: chat_close
-description: End-of-session wrap-up for Ambra Schuster's Documented NY project. Updates the active sub-project's tasks.md (checkboxes, newly discovered work), amends requirements.md or architecture.md if scope or a technical decision changed, refreshes SUBMISSION.md and CLAUDE.md if they went stale, then splits the session's work into logical commits and pushes them to the current branch. Use when the user says they're wrapping up, switching tasks, done for now, or invokes /chat_close.
+description: End-of-session wrap-up for Ambra Schuster's Documented NY project in docs/submissions/ambra-schuster/. Updates the active sub-project's tasks.md (checkboxes, newly discovered work), amends requirements.md or architecture.md if scope or a technical decision changed, refreshes SUBMISSION.md so it reflects current project status, updates CLAUDE.md if it went stale, then splits the session's work into logical commits and pushes them to the current branch. Use when the user says they're wrapping up, switching tasks, done for now, or invokes /chat_close.
 ---
 
 # Chat close
@@ -10,8 +10,8 @@ on this session only lives in the conversation. Docs first, then commits, so
 the doc updates ride along in the push.
 
 Everything in this skill is scoped to `docs/submissions/ambra-schuster/`.
-Per `CLAUDE.md`, that folder is the whole workspace — the site's own
-directories (`docs/` outside this folder, `project/`, `api/`, root-level
+Per that folder's `CLAUDE.md`, it is the whole workspace — the site's own
+directories (`docs/` outside that folder, `project/`, `api/`, root-level
 config) belong to the workshop maintainers. If wrap-up seems to require
 touching a file outside the folder, stop and say what and why instead of
 reaching outside.
@@ -34,7 +34,8 @@ it into the push.
 
 ## Step 1 — The active sub-project's `tasks.md`
 
-`CLAUDE.md`'s table says which of the five sub-projects is active. That
+The project table in `docs/submissions/ambra-schuster/CLAUDE.md` says which
+of the five sub-projects under `documented-answers/` is active. That
 project's `tasks.md` is the live list of what's open:
 
 - Check off (`- [x]`) tasks completed this session — but only against the
@@ -44,8 +45,8 @@ project's `tasks.md` is the live list of what's open:
   it float.
 - Keep entries short.
 
-Don't touch a non-active project's `tasks.md`. Projects 2, 4 and 5 are
-written at planning depth and get rewritten before they start.
+Don't touch a non-active project's `tasks.md`. Projects written at planning
+depth get rewritten before they start.
 
 ## Step 2 — `requirements.md` and `architecture.md`, if relevant
 
@@ -68,9 +69,15 @@ need it.
 
 ## Step 3 — `SUBMISSION.md`, and `CLAUDE.md` if it went stale
 
-- If the pitch or direction shifted this session, update `SUBMISSION.md` to
-  match. Per `CLAUDE.md`, it gets kept accurate as things change rather than
-  filled in at the end.
+- **Every run, update `docs/submissions/ambra-schuster/SUBMISSION.md` so it
+  reflects the current state of the project** — replace any remaining
+  `TODO` placeholders, and revise the hypothesis, what you're building, and
+  solution fields if the session moved them. Keep it concise: roughly one
+  to two sentences per field, plain language, describing what actually
+  exists now rather than what's planned. This is a public showcase card,
+  not a status log — no changelog entries, no task lists, no session
+  history. If nothing about the project's direction or state changed this
+  session, leave the file alone and say so.
 - If the same correction came up more than once this session, or the same
   mistake was made twice, add a line to `CLAUDE.md` — that's the signal the
   file names for when to grow it.

@@ -1,98 +1,109 @@
 ---
 name: chat_close
-description: End-of-session wrap-up for this repo. Updates project/tasks.md (checkboxes, newly discovered tasks) and project/CHANGELOG.md (dated entry) if relevant, adds a new ADR under project/adr/ if a non-trivial technical decision was made this session, then splits the session's work into logical commits and pushes them to the current branch. Use when the user says they're wrapping up, switching tasks, done for now, or invokes /chat_close.
+description: End-of-session wrap-up for Ambra Schuster's Documented NY project in docs/submissions/ambra-schuster/. Updates the active sub-project's tasks.md (checkboxes, newly discovered work), amends requirements.md or architecture.md if scope or a technical decision changed, refreshes SUBMISSION.md so it reflects current project status, updates CLAUDE.md if it went stale, then splits the session's work into logical commits and pushes them to the current branch. Use when the user says they're wrapping up, switching tasks, done for now, or invokes /chat_close.
 ---
 
 # Chat close
 
 Run this at the end of a session, before switching tasks, so nothing worked
-on this session only lives in the conversation. Four steps, in order —
-docs first, then commits, so the doc updates ride along in the push.
+on this session only lives in the conversation. Docs first, then commits, so
+the doc updates ride along in the push.
+
+Everything in this skill is scoped to `docs/submissions/ambra-schuster/`.
+Per that folder's `CLAUDE.md`, it is the whole workspace — the site's own
+directories (`docs/` outside that folder, `project/`, `api/`, root-level
+config) belong to the workshop maintainers. If wrap-up seems to require
+touching a file outside the folder, stop and say what and why instead of
+reaching outside.
 
 ## Step 0 — Establish what actually happened
 
 Don't work from memory of the conversation alone. Run `git status` and
 `git diff` (staged and unstaged) to see the real, current change set —
 conversation recall and actual diffs drift, especially in a long session.
-Note anything that was tried and reverted (worth a line in the changelog per
-existing convention below) versus what's actually still in the tree.
+Note anything that was tried and reverted versus what's actually still in
+the tree.
 
 If `git status` is clean and nothing was discussed that maps to docs work
 either, say so and stop — don't manufacture busywork on a session that
 didn't change anything.
 
-## Step 1 — Task tracker: `project/tasks.md`, if relevant
+Also check that nothing outside `docs/submissions/ambra-schuster/` is
+modified. If something is, flag it before committing rather than sweeping
+it into the push.
 
-Per `CLAUDE.md`'s "While working" section, this is the current, actively
-maintained list of what's open. Update it when this session's work maps
-onto it:
+## Step 1 — The active sub-project's `tasks.md`
 
-- Check off (`- [x]`) or remove any task completed this session.
-- If a task was discovered but not done, add it under the relevant header
-  rather than leaving it untracked.
-- Keep entries short — full history and reasoning belongs in the dated
-  `project/CHANGELOG.md` entry (Step 3), not piled into `tasks.md` itself.
+The project table in `docs/submissions/ambra-schuster/CLAUDE.md` says which
+of the five sub-projects under `documented-answers/` is active. That
+project's `tasks.md` is the live list of what's open:
 
-Skip this step (leave the file untouched) if the session's work genuinely
-doesn't map to anything tracked here — don't force an edit.
+- Check off (`- [x]`) tasks completed this session — but only against the
+  specific *Done when* line. If that line isn't literally true yet, the
+  task isn't finished; leave it unchecked and say so.
+- Add work discovered but not done to the right stage, rather than letting
+  it float.
+- Keep entries short.
 
-If this session changed what the product fundamentally does or requires
-(not just what's left to do), also update `project/specifications.md` to
-match — that file changes rarely, so only touch it on a real scope change.
+Don't touch a non-active project's `tasks.md`. Projects written at planning
+depth get rewritten before they start.
 
-## Step 2 — Architecture: `project/adr/`, if relevant
+## Step 2 — `requirements.md` and `architecture.md`, if relevant
 
-Per `CLAUDE.md`: any non-trivial technical decision (new dependency,
-changed data flow, hosting/infra change, a deviation from an existing
-plan or ADR) gets a new numbered ADR, not an edit to an old one.
+Per `CLAUDE.md`, these are the source of truth for the active project, and
+stale entries get fixed in the same commit as the work that made them stale.
 
-- Read `project/adr/README.md`'s index and the most recent ADR (highest
-  number) to match numbering and format.
-- New file: `project/adr/00NN-short-slug.md` with `Status`/`Date` header
-  and `## Context` / `## Decision` / `## Consequences` sections (see any
-  existing ADR, e.g. `0024-nav-home-redesign.md`, for depth and tone).
-- If a decision supersedes an earlier ADR, say so in both the new ADR and
-  by updating that old ADR's Status in `project/adr/README.md`'s table —
-  never edit the superseded ADR's own body.
-- Add the new row to `project/adr/README.md`'s table.
+- If the session changed **what the project does or requires** — not just
+  what's left to do — update `requirements.md` to match. This should be
+  rare; only on a real scope change.
+- If a decision in `architecture.md` turned out to be wrong, or the session
+  made a non-trivial technical decision (new dependency, changed data flow,
+  hosting change, a deviation from what the file describes), update
+  `architecture.md` so it describes what was actually built. Don't leave the
+  file describing something different from the code.
+- If the work drifted past what `requirements.md` allows, or into another
+  project's scope, say so rather than quietly widening the file to fit.
 
-Skip this step if nothing decision-worthy happened this session — most
-sessions (content edits, bug fixes, copy passes) won't need one.
+Skip this step if nothing decision-worthy happened — most sessions won't
+need it.
 
-## Step 3 — Changelog: `project/CHANGELOG.md`
+## Step 3 — `SUBMISSION.md`, and `CLAUDE.md` if it went stale
 
-Add one dated entry under this file's `## Change log` section
-(reverse-chronological, newest entries directly under the header):
-
-- `- YYYY-MM-DD — **Bold one-line summary.** ` then 2-5 sentences: what
-  changed, why, and anything explicitly excluded or left open.
-- Keep it concise. Some existing entries run long (multi-paragraph, full
-  audit trail) because they were written for high-stakes structural passes
-  — don't match that length by default. A few tight sentences is the right
-  size for a normal session; only go longer if the session itself was
-  unusually complex and the detail is load-bearing.
-- Use today's actual date, not a placeholder.
+- **Every run, update `docs/submissions/ambra-schuster/SUBMISSION.md` so it
+  reflects the current state of the project** — replace any remaining
+  `TODO` placeholders, and revise the hypothesis, what you're building, and
+  solution fields if the session moved them. Keep it concise: roughly one
+  to two sentences per field, plain language, describing what actually
+  exists now rather than what's planned. This is a public showcase card,
+  not a status log — no changelog entries, no task lists, no session
+  history. If nothing about the project's direction or state changed this
+  session, leave the file alone and say so.
+- If the same correction came up more than once this session, or the same
+  mistake was made twice, add a line to `CLAUDE.md` — that's the signal the
+  file names for when to grow it.
+- If the status of a sub-project changed (paused, started, finished), update
+  the status column in `CLAUDE.md`'s project table.
 
 ## Step 4 — Commit and push
 
-- Group the diff into logically separate commits (e.g. a content change
-  and an unrelated bug fix are two commits, not one) rather than a single
-  catch-all commit. Doc updates from Steps 1-3 can ride in their own
-  commit or the last content commit, whichever reads more naturally.
-- Write each commit message around *why*, matching this repo's existing
-  log style (`git log --oneline`) — short, imperative, specific.
+- Group the diff into logically separate commits (e.g. a code change and an
+  unrelated docs fix are two commits, not one). Doc updates from Steps 1-3
+  can ride in their own commit or the last content commit, whichever reads
+  more naturally.
+- Write each commit message around *why*, matching the existing log style
+  (`git log --oneline`) — short, imperative, specific.
 - Stage files by name, not `git add -A`/`.` — review `git status` after
-  staging to make sure nothing unintended (stray temp files, unrelated
-  edits) is included.
-- Push to the current branch: `git push -u origin <branch-name>`. Retry
-  on network failure only (exponential backoff), per standing git
-  guidance. Never force-push, rewrite history, or skip hooks to get a
-  push through — if a hook fails, fix the underlying issue and commit
+  staging to make sure nothing unintended (stray temp files, `.DS_Store`,
+  unrelated edits) is included.
+- Before the first commit of anything new, confirm `.gitignore` actually
+  covers `.env`, `corpus.json`, and any credentials file. Never commit an
+  API key, token, or password — if one is about to go in, stop and say so.
+- Push to the current branch: `git push -u origin <branch-name>`. Retry on
+  network failure only. Never force-push, rewrite history, or skip hooks to
+  get a push through — if a hook fails, fix the underlying issue and commit
   again.
 - If an open PR already exists for this branch, pushing is enough — don't
-  open a duplicate. If none exists and one seems warranted, follow the
-  repo's normal PR flow (check for a template, draft PR) rather than
-  leaving pushed commits with no PR.
+  open a duplicate.
 
-Report back concisely: what got updated in each of the four steps (or
-skipped, and why), and the resulting commits/push outcome.
+Report back concisely: what got updated in each step (or skipped, and why),
+and the resulting commits/push outcome.
