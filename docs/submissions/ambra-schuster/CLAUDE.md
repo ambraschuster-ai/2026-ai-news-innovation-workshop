@@ -28,10 +28,16 @@ not this file.
 | 4 — Channels + voice | Not started | [requirements](documented-answers/project-4-channels-voice/requirements.md) · [architecture](documented-answers/project-4-channels-voice/architecture.md) · [tasks](documented-answers/project-4-channels-voice/tasks.md) |
 | 5 — Listening loop | Not started | [requirements](documented-answers/project-5-listening-loop/requirements.md) · [architecture](documented-answers/project-5-listening-loop/architecture.md) · [tasks](documented-answers/project-5-listening-loop/tasks.md) |
 
-**Currently building Project 3**, as a working mockup in
-`documented-answers/mockup/` — a grounded chatbot over a hand-picked sample
-of Documented's education articles. Project 1 is paused after its Stage 0.1
-rescue; the rest of it is unstarted.
+**Currently building Project 3.** The working mockup in
+`documented-answers/mockup/` answers, cites, dates and refuses over 38 of
+Documented's resource articles in English and Spanish. Its Stage 0 in
+`project-3-answer-engine/tasks.md` records what it does and — just as
+important — what it deliberately does not, so the mockup isn't mistaken for
+progress on the real build. Project 1 is paused after its Stage 0.1 rescue.
+
+Not yet decided, and both are mine to make: whether to host on Render (what
+it's built for) or Vercel (what my instructor suggested), and whether the
+page keeps Documented's name and styling.
 
 Read the active project's three files at the start of every session, and
 another project's docs only when I say we're moving to it. Projects 2, 4 and
