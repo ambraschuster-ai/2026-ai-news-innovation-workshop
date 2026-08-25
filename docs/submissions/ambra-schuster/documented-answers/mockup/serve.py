@@ -19,6 +19,9 @@ Three things this has to get right that the local-only version did not:
    record that should not exist (see Project 5).
 """
 
+import hashlib
+import hmac
+import html
 import json
 import os
 import threading
@@ -28,6 +31,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from bot import Bot, LANGUAGES
 from search import Index
+import usage
 
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", 8080))
@@ -66,6 +70,30 @@ MAX_BODY_BYTES = 64 * 1024
 # a new cookie buys new messages but not new budget -- so this is about
 # memory, not money.
 MAX_SESSIONS = 500
+
+# --- who is allowed in ---------------------------------------------------
+#
+# Set ACCESS_CODE and the whole thing is closed: no page, no API, nothing
+# until a visitor proves they know the code. Leave it unset and it is open,
+# which is right on a laptop and wrong on the public internet.
+#
+# This is a shared passphrase, not accounts. Everyone who has the link has
+# the same code, anyone can pass it on, and it is only as private as the
+# people you send it to. What it does buy is the thing that matters here:
+# a stranger who finds the URL cannot spend the API key behind it.
+#
+# The cookie holds an HMAC of a fixed string keyed by the code itself.
+# Knowing the code lets you compute it -- which is the point -- and not
+# knowing it makes the cookie unforgeable. The code is never in the cookie.
+ACCESS_CODE = os.environ.get("ACCESS_CODE", "").strip()
+GATE_TTL = 60 * 60 * 24 * 30  # a month, so classmates type it once
+
+
+def gate_token(code):
+    return hmac.new(code.encode("utf-8"), b"documented-gate-v1", hashlib.sha256).hexdigest()
+
+
+EXPECTED_TOKEN = gate_token(ACCESS_CODE) if ACCESS_CODE else ""
 
 _lock = threading.Lock()
 _sessions = {}       # sid -> {"bot": Bot, "count": int, "seen": float}
@@ -152,7 +180,11 @@ def take_turn_budget(sid):
         s["seen"] = time.time()
         _day["count"] += 1
         _save_day(_day)
-        return True, None
+    # Outside the lock: this writes a file, and the rate limiter should not
+    # wait on the bookkeeping. usage has its own lock, and nothing it holds
+    # ever waits on ours, so the two cannot deadlock.
+    usage.count("question")
+    return True, None
 
 
 def take_restate_budget(sid, answer_id, target):
@@ -185,7 +217,8 @@ def take_restate_budget(sid, answer_id, target):
         s["restated"] += 1
         _day["count"] += 1
         _save_day(_day)
-        return True, None
+    usage.count("restatement")
+    return True, None
 
 
 SESSION_FULL = """You've reached this demo's limit of {n} messages — it's a \
@@ -208,6 +241,101 @@ spent.
 
 Try again tomorrow. For anything urgent, call **311** and ask for **ActionNYC** \
 — free immigration legal help, in your language."""
+
+
+SHELL = """<!doctype html><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{title}</title>
+<style>
+ :root {{ --bg:#fbfaf8; --panel:#fff; --ink:#1a1a1a; --muted:#6b6b6b;
+          --line:#e5e2dc; --accent:#b03a2e; --chip:#f3f1ec; }}
+ @media (prefers-color-scheme:dark) {{ :root {{ --bg:#16161a; --panel:#1e1e23;
+   --ink:#ececec; --muted:#9a9a9a; --line:#33333a; --accent:#e8735f; --chip:#26262c; }} }}
+ *{{box-sizing:border-box}}
+ body {{ margin:0; background:var(--bg); color:var(--ink); padding:2rem 1.25rem;
+   font:16px/1.6 ui-sans-serif,system-ui,-apple-system,sans-serif; }}
+ .wrap {{ max-width:44rem; margin:0 auto; }}
+ h1 {{ font-size:1.15rem; margin:0 0 .3rem; }}
+ p {{ color:var(--muted); font-size:.9rem; }}
+ input {{ font:inherit; padding:.6rem .8rem; border-radius:10px; width:100%;
+   border:1px solid var(--line); background:var(--panel); color:var(--ink); }}
+ button {{ background:var(--accent); color:#fff; border:0; border-radius:10px;
+   padding:.6rem 1.4rem; font:inherit; cursor:pointer; margin-top:.7rem; }}
+ table {{ border-collapse:collapse; width:100%; font-size:.85rem; margin-top:1rem; }}
+ th,td {{ text-align:right; padding:.4rem .5rem; border-bottom:1px solid var(--line); }}
+ th:first-child,td:first-child {{ text-align:left; }}
+ th {{ color:var(--muted); font-weight:600; font-size:.75rem;
+   text-transform:uppercase; letter-spacing:.05em; }}
+ tr.total td {{ font-weight:700; border-top:2px solid var(--line); border-bottom:0; }}
+ .note {{ background:var(--chip); border:1px solid var(--line); border-radius:10px;
+   padding:.8rem 1rem; font-size:.8rem; color:var(--muted); margin-top:1.5rem; }}
+ .big {{ font-size:2rem; font-weight:700; color:var(--ink); }}
+ .err {{ color:var(--accent); font-size:.85rem; }}
+</style>
+<div class="wrap">{body}</div>"""
+
+GATE_PAGE = SHELL.format(title="Documented — enter code", body="""
+ <h1>This is a private prototype.</h1>
+ <p>Enter the code you were given.</p>
+ <form onsubmit="go(event)">
+   <input id="c" type="password" autofocus placeholder="Code" autocomplete="off">
+   <button>Enter</button>
+   <div class="err" id="e"></div>
+ </form>
+ <script>
+ async function go(e) {
+   e.preventDefault();
+   const r = await fetch('/unlock', { method:'POST',
+     headers:{'content-type':'application/json'},
+     body: JSON.stringify({ code: document.getElementById('c').value }) });
+   if ((await r.json()).ok) location.href = '/';
+   else document.getElementById('e').textContent = 'That code is not right.';
+ }
+ </script>""")
+
+
+def stats_page():
+    """What this has cost. Reachable only behind the access code."""
+    rows, total = usage.report(days=14)
+    today = rows[0] if rows and rows[0]["date"] == time.strftime("%Y-%m-%d", time.gmtime()) \
+        else usage._blank("today")
+
+    def tr(r, cls=""):
+        return (
+            f'<tr class="{cls}"><td>{html.escape(str(r["date"]))}</td>'
+            f'<td>{r["questions"]}</td><td>{r["restatements"]}</td>'
+            f'<td>{r["api_calls"]}</td>'
+            f'<td>{r["input"] + r["cache_write"] + r["cache_read"]:,}</td>'
+            f'<td>{r["output"]:,}</td>'
+            f'<td>${r["cost"]:.2f}</td></tr>'
+        )
+
+    with _lock:
+        live = len(_sessions)
+        used_today = _day["count"]
+
+    body = f"""
+ <h1>Usage</h1>
+ <p>Today, {html.escape(_today())} UTC</p>
+ <div class="big">${today['cost']:.2f}</div>
+ <p>{today['questions']} questions · {today['restatements']} language switches ·
+    {used_today} of {MAX_PER_DAY} against today's limit · {live} live conversations</p>
+ <table>
+  <tr><th>Day</th><th>Questions</th><th>Switches</th><th>API calls</th>
+      <th>In</th><th>Out</th><th>Cost</th></tr>
+  {''.join(tr(r) for r in rows) or '<tr><td colspan="7">Nothing yet.</td></tr>'}
+  {tr(total, "total")}
+ </table>
+ <div class="note">
+  <p><b>These are estimates, and they are not the bill.</b> Prices are written
+  into <code>usage.py</code> by hand, so if Anthropic changes them this page
+  keeps quoting the old ones. The Anthropic Console's billing page is the
+  real number — and your spend cap there is the real limit.</p>
+  <p>History resets when the service redeploys or restarts, because a free
+  host has no permanent disk. Nothing here records who asked what; only
+  counts and tokens are kept.</p>
+ </div>"""
+    return SHELL.format(title="Usage", body=body)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -241,6 +369,25 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeDecodeError):
             return None
 
+    def _cookie(self, name):
+        for part in self.headers.get("Cookie", "").split(";"):
+            k, _, v = part.strip().partition("=")
+            if k == name:
+                return v
+        return ""
+
+    def unlocked(self):
+        """Has this visitor proved they know the code? Open if none is set."""
+        if not ACCESS_CODE:
+            return True
+        return hmac.compare_digest(self._cookie("gate"), EXPECTED_TOKEN)
+
+    def _set_gate_cookie(self):
+        self.send_header(
+            "Set-Cookie",
+            f"gate={EXPECTED_TOKEN}; Path=/; Max-Age={GATE_TTL}; SameSite=Lax; HttpOnly",
+        )
+
     def _plain(self, code, body=b""):
         self.send_response(code)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
@@ -253,9 +400,25 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(b"%x\r\n" % len(chunk) + chunk + b"\r\n")
         self.wfile.flush()
 
+    def _html(self, body, extra_cookie=None):
+        body = body.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        # A gated page must not be cached by anything in between.
+        self.send_header("Cache-Control", "no-store")
+        if extra_cookie:
+            extra_cookie()
+        self.end_headers()
+        self.wfile.write(body)
+
     # -- routes --
     def do_GET(self):
-        if self.path == "/healthz":
+        path, _, query = self.path.partition("?")
+
+        # Health checks stay open: the host polls this to decide whether the
+        # service is alive, and it says nothing except that it is.
+        if path == "/healthz":
             body = b'{"ok":true}'
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -264,12 +427,31 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
             return
 
+        # A code in the link, so one URL can be all a classmate needs.
+        if ACCESS_CODE and not self.unlocked():
+            for pair in query.split("&"):
+                k, _, v = pair.partition("=")
+                if k == "k" and hmac.compare_digest(gate_token(v), EXPECTED_TOKEN):
+                    self.send_response(303)
+                    self.send_header("Location", path)
+                    self._set_gate_cookie()
+                    self.send_header("Content-Length", "0")
+                    self.end_headers()
+                    return
+            self._html(GATE_PAGE)
+            return
+
+        if path == "/stats":
+            self._html(stats_page())
+            return
+
         with open(PAGE, "rb") as f:
             page = f.read()
         sid, fresh = self._sid()
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(page)))
+        self.send_header("Cache-Control", "no-store")
         if fresh:
             self.send_header(
                 "Set-Cookie", f"sid={sid}; Path=/; Max-Age=3600; SameSite=Lax; HttpOnly"
@@ -282,6 +464,28 @@ class Handler(BaseHTTPRequestHandler):
         if payload is None or not isinstance(payload, dict):
             self._plain(400, b"bad request")
             return
+
+        if self.path == "/unlock":
+            given = payload.get("code", "")
+            ok = isinstance(given, str) and ACCESS_CODE and hmac.compare_digest(
+                gate_token(given.strip()), EXPECTED_TOKEN
+            )
+            body = b'{"ok":true}' if ok else b'{"ok":false}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            if ok:
+                self._set_gate_cookie()
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        # Every other POST is the API. Gating the page and leaving this open
+        # would protect nothing -- the key is spent here, not there.
+        if not self.unlocked():
+            self._plain(403, b"forbidden")
+            return
+
         sid, _ = self._sid()
 
         if self.path == "/reset":

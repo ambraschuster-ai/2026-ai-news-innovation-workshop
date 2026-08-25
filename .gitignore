@@ -10,3 +10,6 @@ docs/submissions/ambra-schuster/documented-answers/mockup/.env
 # ours to republish. Supplied to the host as a Secret File instead.
 docs/submissions/ambra-schuster/documented-answers/mockup/corpus.json
 docs/submissions/ambra-schuster/documented-answers/mockup/.daily-count
+
+# usage tracking, written at runtime
+docs/submissions/ambra-schuster/documented-answers/mockup/.usage.json

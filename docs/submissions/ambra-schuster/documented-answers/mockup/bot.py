@@ -30,6 +30,7 @@ import anthropic
 
 from search import Index
 import guardrails
+import usage
 
 MODEL = "claude-opus-5"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -473,7 +474,7 @@ class Bot:
             for delta in stream.text_stream:
                 out += delta
                 yield ("text", delta)
-            stream.get_final_message()
+            usage.record(MODEL, stream.get_final_message().usage, "restatement")
 
         answer["versions"][target] = out
 
@@ -518,6 +519,7 @@ class Bot:
                 tools=[SEARCH_TOOL],
                 messages=self._messages(),
             )
+            usage.record(MODEL, resp.usage, "question")
             self.history.append({"role": "assistant", "content": resp.content})
 
             if resp.stop_reason != "tool_use":
@@ -602,6 +604,7 @@ class Bot:
                     yield ("text", event)
                 resp = stream.get_final_message()
 
+            usage.record(MODEL, resp.usage, "question")
             self.history.append({"role": "assistant", "content": resp.content})
             if resp.stop_reason != "tool_use":
                 break
