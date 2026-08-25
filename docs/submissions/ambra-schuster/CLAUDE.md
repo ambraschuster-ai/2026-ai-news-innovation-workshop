@@ -71,6 +71,7 @@ Before we dive into real work, ask me a few quick questions so you know how much
 - **Jargon:** explain a technical term the first time it comes up, briefly. After that, use it normally.
 - **Working style:** depends on size. Small things, just do them. Anything substantial or hard to undo, check with me first. (This is also the default for how much to build before checking in.)
 - **Reasoning:** only when I ask. Don't narrate the "why" behind routine choices.
+- **Answer shape:** lead with the direct answer — usually one short sentence, yes or no where that fits — then the detail underneath. Plain words over technical ones. Use a short list or a small table when there are a few things to compare, not paragraphs. Keep the whole thing brief, and close with the question I actually need to decide, if there is one.
 
 If I start asking for more or less than this, update these answers rather than guessing.
 
