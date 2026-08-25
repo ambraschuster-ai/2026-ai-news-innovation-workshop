@@ -1,0 +1,22 @@
+{
+  "locales": [
+    "en-us",
+    "es",
+    "fr",
+    "fr-ht"
+  ],
+  "counts": {
+    "articles.en-us": 129,
+    "categories.en-us": 11,
+    "sections.en-us": 32,
+    "articles.es": 72,
+    "categories.es": 11,
+    "sections.es": 19,
+    "articles.fr": 77,
+    "categories.fr": 11,
+    "sections.fr": 19,
+    "articles.fr-ht": 58,
+    "categories.fr-ht": 11,
+    "sections.fr-ht": 19
+  }
+}
