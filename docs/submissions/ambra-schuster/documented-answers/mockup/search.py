@@ -19,7 +19,41 @@ import re
 import unicodedata
 from collections import Counter
 
-CORPUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "corpus.json")
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def find_corpus():
+    """Where corpus.json is, which depends on who put it there.
+
+    On a laptop it sits next to this file. On Render it arrives as a Secret
+    File, and Render decides where those land -- the repo root or the service
+    root, depending on the service. Rather than guess and fail at start-up
+    with a bare FileNotFoundError, look in the likely places and say what was
+    tried if none of them has it.
+    """
+    tried = []
+    for path in (
+        os.environ.get("CORPUS_FILE"),
+        os.path.join(HERE, "corpus.json"),
+        os.path.join(os.getcwd(), "corpus.json"),
+        "/opt/render/project/src/corpus.json",
+    ):
+        if not path:
+            continue
+        tried.append(path)
+        if os.path.exists(path):
+            return path
+
+    raise SystemExit(
+        "corpus.json not found. Looked in:\n  "
+        + "\n  ".join(tried)
+        + "\n\nOn Render: add it under Environment > Secret Files with the\n"
+        "filename corpus.json, or set CORPUS_FILE to wherever it landed.\n"
+        "On a laptop: run receive.py and collect it. See DEPLOY.md."
+    )
+
+
+CORPUS = None  # resolved on first use, so importing this file never fails
 
 K1, B = 1.5, 0.75  # standard BM25 knobs
 
@@ -86,7 +120,8 @@ def tokenize(s):
 
 
 class Index:
-    def __init__(self, path=CORPUS):
+    def __init__(self, path=None):
+        path = path or find_corpus()
         with open(path, encoding="utf-8") as f:
             articles = json.load(f)
 

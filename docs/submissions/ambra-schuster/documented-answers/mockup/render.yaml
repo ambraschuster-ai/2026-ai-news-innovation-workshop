@@ -2,8 +2,9 @@
 #
 # Two things are NOT in this repo and must be set in the Render dashboard:
 #   1. ANTHROPIC_API_KEY  -> Environment > Environment Variables (secret)
-#   2. corpus.json        -> Environment > Secret Files, filename `corpus.json`,
-#                            mounted at /opt/render/project/src/<rootDir>/
+#   2. corpus.json        -> Environment > Secret Files, filename `corpus.json`
+#                            (search.py looks in the several places Render
+#                            might put it; CORPUS_FILE overrides if needed)
 # Both are gitignored on purpose. See mockup/DEPLOY.md.
 services:
   - type: web
@@ -21,5 +22,9 @@ services:
         value: "15"
       - key: MAX_PER_DAY
         value: "150"
+      - key: MAX_RESTATE_PER_SESSION
+        value: "24"
+      - key: MAX_MESSAGE_CHARS
+        value: "4000"
       - key: PYTHON_VERSION
         value: "3.11.9"
