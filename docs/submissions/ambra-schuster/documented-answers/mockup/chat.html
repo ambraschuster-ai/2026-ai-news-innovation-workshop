@@ -72,9 +72,20 @@
     margin-top: .9rem; padding-top: .7rem; border-top: 1px solid var(--line);
     font-size: .8rem;
   }
-  .sources div { margin-bottom: .3rem; color: var(--muted); }
+  .sources div { margin-bottom: .45rem; color: var(--muted); }
   .sources a { color: var(--accent); text-decoration: none; }
   .sources a:hover { text-decoration: underline; }
+  .age {
+    display: inline-block; border-radius: 20px; padding: .05rem .5rem;
+    font-size: .7rem; margin-left: .35rem; white-space: nowrap;
+    border: 1px solid var(--line); background: var(--chip); color: var(--muted);
+  }
+  .age.aging { background: #fdf6e6; border-color: #e3d09a; color: #7a5c12; }
+  .age.stale { background: #fdf0ed; border-color: #f2cfc8; color: #8a2a1e; }
+  @media (prefers-color-scheme: dark) {
+    .age.aging { background: #2a2416; border-color: #4a3f20; color: #e0cd9a; }
+    .age.stale { background: #33211e; border-color: #5a332c; color: #f0a294; }
+  }
   .flag {
     margin-top: .7rem; padding: .5rem .8rem; border-radius: 8px; font-size: .8rem;
     background: #fdf0ed; color: #8a2a1e; border: 1px solid #f2cfc8;
@@ -105,35 +116,39 @@
 
 <header>
   <b>Documented</b>
-  <span>resource assistant · mockup on 9 articles</span>
+  <span>resource assistant · mockup on 38 articles</span>
   <button onclick="reset()">New conversation</button>
 </header>
 
 <div id="log"><div class="wrap" id="logwrap">
   <div class="banner">
     <p><b>A student prototype — not Documented's product, and not legal advice.</b></p>
-    <p>Built in an afternoon for a CUNY workshop. It has read <b>9 of Documented's
-    education articles</b> (6 English, 3 Spanish) and nothing else — not the rest
-    of their guide, not the internet, not the law. It is not affiliated with
-    Documented and they have not reviewed it.</p>
+    <p>Built in an afternoon for a CUNY workshop. It has read <b>38 articles
+    from Documented's resource guide</b> (23 English, 15 Spanish) and nothing
+    else — not the other ~200 articles in the guide, not the internet, not the
+    law. It is not affiliated with Documented and they have not reviewed it.</p>
+    <p>Answers carry the date the article was last updated. Some of these
+    articles are years old, and <b>dollar amounts, fees and eligibility rules
+    go out of date</b> — check anything you're about to act on.</p>
     <p>For anything that actually matters, call <b>311</b> and ask for
     <b>ActionNYC</b> — free immigration legal help, in your language.</p>
   </div>
   <div class="msg bot">
     <div class="who">assistant</div>
     <div class="body">
-      <p>Hi — I can look things up in nine articles Documented published about
-      schools, childcare and education in New York City. Ask me in English or
-      Spanish.</p>
-      <p>Those nine articles are all I know, so try me on something they cover:</p>
+      <p>Hi — I've read 38 articles from Documented's resource guide: schools
+      and childcare, food and SNAP, health and dental, housing, work, free legal
+      help, IDNYC and getting around. Ask me in English or Spanish.</p>
+      <p>Those 38 are all I know, so try me on something they cover:</p>
       <div class="examples">
         <button onclick="suggest(this)">I'm Colombian and have two kids. What do I need to know about schools in New York?</button>
-        <button onclick="suggest(this)">Where can my son get free help with homework after school?</button>
-        <button onclick="suggest(this)">¿Cómo inscribo a mi hija en Pre-K si no tengo papeles?</button>
+        <button onclick="suggest(this)">I don't have insurance and my tooth hurts. Where can I go?</button>
+        <button onclick="suggest(this)">¿Dónde puedo conseguir un abogado de inmigración gratis?</button>
       </div>
-      <p style="color:var(--muted);font-size:.85rem">Ask about anything outside
-      those nine — rent, work permits, healthcare — and it should tell you it
-      doesn't have it. That refusal is the part worth testing.</p>
+      <p style="color:var(--muted);font-size:.85rem">Ask about something outside
+      those 38 — a visa deadline, a USCIS filing fee, what's in your own case —
+      and it should tell you it doesn't have it. That refusal is the part worth
+      testing.</p>
     </div>
   </div>
 </div></div>
@@ -244,12 +259,19 @@ async function send(e) {
           body.innerHTML = '<p style="color:var(--accent)">Error: ' + data + '</p>';
         } else if (kind === 'done') {
           if (data.sources.length) {
+            // The age badge is rendered from the date, not from anything the
+            // model wrote. If it forgets to mention how old an article is,
+            // this still says so.
+            const label = { stale: 'out of date — check before acting',
+                            aging: 'worth confirming' };
             const s = document.createElement('div');
             s.className = 'sources';
             s.innerHTML = '<div><b>Sources</b></div>' + data.sources.map(x =>
               '<div>· <a href="' + x.url + '" target="_blank" rel="noopener">'
               + x.title + '</a> — ' + x.lang.toUpperCase()
-              + ', updated ' + x.last_updated + '</div>').join('');
+              + '<span class="age ' + x.staleness + '">updated ' + x.last_updated
+              + ' · ' + x.age + (label[x.staleness] ? ' · ' + label[x.staleness] : '')
+              + '</span></div>').join('');
             el.appendChild(s);
           }
           for (const n of data.notes) {

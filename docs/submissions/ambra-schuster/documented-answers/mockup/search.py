@@ -1,7 +1,7 @@
 """
 Search over Documented's article sections.
 
-BM25, in memory, no dependencies. The corpus is 43 sections -- a database
+BM25, in memory, no dependencies. The corpus is 247 sections -- a database
 would be theatre. The interface is what matters: swap the guts for SQLite
 FTS5 or embeddings later and nothing above this file changes.
 
@@ -11,6 +11,7 @@ Head Start, FAFSA, IEP, Section 504, Dial-A-Teacher. Keyword search nails
 those; embeddings blur them into "childcare-ish".
 """
 
+import datetime
 import json
 import math
 import os
@@ -21,6 +22,56 @@ from collections import Counter
 CORPUS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "corpus.json")
 
 K1, B = 1.5, 0.75  # standard BM25 knobs
+
+# How old an article has to be before we say something about it.
+#
+# These are judgement calls, not science. Six months is roughly how long a
+# benefit amount, a fee, or an eligibility rule can sit before it is worth
+# double-checking; eighteen months is where "probably still true" stops being
+# a safe assumption at all. Documented's own guide has articles on both sides
+# of both lines, which is the whole reason this exists -- Project 2 in the
+# plan is about fixing the stale ones, and this is about not hiding them in
+# the meantime.
+AGING_DAYS = 182
+STALE_DAYS = 548
+
+
+def describe_age(modified, today=None):
+    """Turn a date string into (age_phrase, staleness) a person can act on.
+
+    Returns e.g. ("2 years and 11 months ago", "stale"). The phrase is what
+    goes in front of the reader; the staleness label is what the model is
+    told to react to, so the warning does not depend on it doing date
+    arithmetic in its head.
+    """
+    today = today or datetime.date.today()
+    try:
+        d = datetime.date(*(int(x) for x in modified.split("-")[:3]))
+    except (ValueError, TypeError):
+        return "date unknown", "unknown"
+
+    days = (today - d).days
+    if days < 0:
+        return "just published", "fresh"
+    if days < 45:
+        phrase = "within the last few weeks"
+    elif days < 365:
+        phrase = f"about {max(1, round(days / 30.4))} months ago"
+    else:
+        years = days // 365
+        months = round((days % 365) / 30.4)
+        if months == 12:  # 2 years and 12 months is 3 years
+            years, months = years + 1, 0
+        phrase = f"about {years} year{'s' if years > 1 else ''}"
+        if months:
+            phrase += f" and {months} month{'s' if months > 1 else ''}"
+        phrase += " ago"
+
+    if days >= STALE_DAYS:
+        return phrase, "stale"
+    if days >= AGING_DAYS:
+        return phrase, "aging"
+    return phrase, "fresh"
 
 
 def tokenize(s):
@@ -98,6 +149,7 @@ class Index:
         scored.sort(key=lambda x: -x[0])
         out = []
         for s, fallback, c in scored[:k]:
+            age, staleness = describe_age(c["modified"])
             out.append({
                 "score": round(s, 2),
                 "fallback_language": fallback,
@@ -105,6 +157,8 @@ class Index:
                 "url": c["url"],
                 "lang": c["lang"],
                 "last_updated": c["modified"],
+                "age": age,
+                "staleness": staleness,
                 "heading": c["heading"],
                 "text": c["text"],
                 "links": c["links"],
@@ -125,8 +179,19 @@ if __name__ == "__main__":
     idx = Index()
     print(f"{idx.n} sections indexed\n")
     q = " ".join(sys.argv[1:]) or "enroll my child in school undocumented"
-    lang = "es" if re.search(r"[¿ñáéíóú]", q) else "en"
+    # Crude, and only for this command-line view -- the bot itself is told the
+    # language outright. Accents alone are not enough: "abogado inmigracion
+    # gratis" is unmistakably Spanish and has none, and guessing English there
+    # made every Spanish hit print as an "EN fallback", which is a lie.
+    ES_WORDS = {
+        "de", "que", "como", "donde", "para", "gratis", "el", "la", "los", "las",
+        "mi", "mis", "hijo", "hija", "puedo", "necesito", "hay", "un", "una",
+        "solicitar", "ayuda", "abogado", "escuela", "salud", "vivienda", "en",
+    }
+    lang = "es" if re.search(r"[¿ñáéíóú]", q) or (
+        ES_WORDS & set(tokenize(q))) else "en"
     for r in idx.search(q, lang=lang):
         flag = "  [EN fallback]" if r["fallback_language"] else ""
+        mark = {"stale": "  ** STALE", "aging": "  * aging"}.get(r["staleness"], "")
         print(f"{r['score']:6.2f}  [{r['lang']}] {r['heading'] or '(intro)'}{flag}")
-        print(f"        {r['title'][:70]}  ({r['last_updated']})")
+        print(f"        {r['title'][:70]}  ({r['last_updated']}, {r['age']}){mark}")

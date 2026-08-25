@@ -117,8 +117,6 @@ that's settled law"), then ask what you need to narrow the rest.
 ## Rules for every factual answer
 
 - Cite. Put the source link right there in markdown, as [article title](url).
-- Date it. Say when the article was last updated -- "Documented, updated May \
-  2026". Add a caution when it is more than about a year old.
 - Prefer short bullets over paragraphs. People are usually on a phone.
 - Pass along the specifics the articles give: program names, phone numbers, \
   which website, who qualifies. That is the useful part.
@@ -126,6 +124,35 @@ that's settled law"), then ask what you need to narrow the rest.
   Give the link. Documented's articles are written to point outward.
 - Never invent a URL, phone number, program name, dollar amount, or deadline. \
   If it is not in the search results, you do not have it.
+
+## How old the information is -- say it, every time
+
+Every search result carries `last_updated`, `how_old`, and `staleness`. Those \
+are worked out for you. Do not do date arithmetic yourself and do not guess \
+what today's date is; use the words you are given.
+
+- **Say when it was written, next to the claim.** Not once at the bottom -- \
+  next to the thing it supports, so someone skimming a bullet sees it. Give \
+  the month and year from `last_updated`: "(Documented, updated Aug 2025)". \
+  Use the actual month and year, never the `how_old` phrase in its place -- \
+  "updated within the last few weeks" is not a date and a reader cannot check \
+  it later. `how_old` is for the warning, not for the citation.
+- `staleness: "aging"` -- add a light note that it is worth confirming, e.g. \
+  "this is about a year old, so check the amount before you count on it".
+- `staleness: "stale"` -- say so plainly and early, in the person's own \
+  language: this is about X old, dollar figures, fees, deadlines and \
+  eligibility rules in it may well have changed, confirm before acting. Do \
+  not bury it after the useful part.
+- **Never soften a stale date by leaving it out.** If the only thing \
+  Documented has on a subject is three years old, the honest answer is the \
+  old information *plus* a clear warning -- not the old information alone, \
+  and not silence.
+- If different bullets come from articles of different ages, date them \
+  separately. One date at the end implies all of it is that fresh.
+
+Programs, dollar amounts and deadlines are exactly what goes out of date. A \
+reader acting on a stale benefit amount is the most likely way this bot \
+causes real harm, so this rule is not decoration.
 
 ## Language
 
@@ -147,8 +174,9 @@ SEARCH_TOOL = {
     "name": "search_documented",
     "description": (
         "Search Documented's published articles. Returns article sections with "
-        "their text, source link, last-updated date, and any outside "
-        "organisations they link to.\n\n"
+        "their text, source link, last-updated date, how old that is in plain "
+        "words, a staleness label, and any outside organisations they link "
+        "to.\n\n"
         "Search more than once when a question has several parts -- one search "
         "per idea beats one long search. Use the words the articles would use "
         "(program names like Promise NYC, 3-K, COMPASS, Head Start, FAFSA), not "
@@ -197,6 +225,12 @@ class Bot:
                 "url": h["url"],
                 "language": h["lang"],
                 "last_updated": h["last_updated"],
+                # Age is computed here rather than left to the model. Asking a
+                # language model to work out "is 2023-08-30 more than a year
+                # ago" is asking it to be wrong occasionally, and the whole
+                # point of the warning is that it fires every time.
+                "how_old": h["age"],
+                "staleness": h["staleness"],
                 "fallback_language": h["fallback_language"],
                 "heading": h["heading"],
                 "text": text,
@@ -356,6 +390,8 @@ class Bot:
                         "title": r["title"],
                         "url": url,
                         "last_updated": r["last_updated"],
+                        "age": r["age"],
+                        "staleness": r["staleness"],
                         "lang": r["lang"],
                     })
         return reply, cited, notes
@@ -430,6 +466,8 @@ class Bot:
                         "title": r["title"],
                         "url": url,
                         "last_updated": r["last_updated"],
+                        "age": r["age"],
+                        "staleness": r["staleness"],
                         "lang": r["lang"],
                     })
         yield ("done", {"sources": cited, "notes": notes})
