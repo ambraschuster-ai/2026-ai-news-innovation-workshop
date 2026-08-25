@@ -4,7 +4,7 @@
 
 ## Where this file kicks in
 
-This file gets copied into your project folder (`docs/submissions/your-name/`) during Day 1's Fork & Submit, so it may already be active from Day 1, in Claude Desktop's Code tab (same engine as Claude Code, just inside Desktop). Starting Day 3, you're working in VS Code with the Claude Code extension instead — but it's the same file, in the same folder, the whole time.
+This file gets copied into your project folder (`docs/submissions/your-name/`) during Day 1's Fork & Submit, so it may already be active from Day 1, in Claude Desktop's Code tab (same engine as Claude Code, just inside Desktop). Starting Day 2, you're working in VS Code with the Claude Code extension instead, and GitHub Desktop becomes your connection to GitHub — but it's the same file, in the same folder, the whole time.
 
 ## How to explain things to me
 
@@ -36,7 +36,7 @@ After explaining something non-obvious, ask a short question that checks whether
 
 - Commit regularly, in small changes that each do one clear thing, with a real message that says why the change was made, not just what changed.
 - For anything bigger than a quick fix, work in a branch and open a Pull Request rather than committing straight to `main`, even if I'm the only one who'll ever review it. It gives us a place to see the diff before it's permanent.
-- Ask Claude Code to run the git commands directly.
+- Do this through GitHub Desktop, or ask Claude Code to run the git commands directly. Either is fine, use whichever feels more natural.
 - Keep these habits even on a solo project. They're what make it possible to look back later and understand what got built and why, and they're the same habits a team project would need.
 
 ## Keeping submission info current

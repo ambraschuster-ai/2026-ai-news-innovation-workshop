@@ -1,0 +1,5 @@
+company,email,confidence,drafted,sent_at,deadline,status,response_notes
+Nike,media.relations@nike.com,MEDIUM,2026-08-24,,"today, Aug. 24, 2026 at 4:00 p.m. ET",not sent,
+Adidas,corporate.press@adidas.com,MEDIUM,2026-08-24,,"today, Aug. 24, 2026 at 4:00 p.m. ET",not sent,
+New Balance,Media.relations@newbalance.com,HIGH,2026-08-24,,"today, Aug. 24, 2026 at 4:00 p.m. ET",not sent,
+Puma,mario.almeida@puma.com,HIGH,2026-08-24,,"today, Aug. 24, 2026 at 4:00 p.m. ET",not sent,

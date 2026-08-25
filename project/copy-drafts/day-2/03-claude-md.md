@@ -22,7 +22,7 @@ This workshop's own repository has a CLAUDE.md file. It's not a hypothetical, it
 
 Three things worth noticing about it, and worth copying into your own:
 
-**It points, it doesn't duplicate**: Instead of listing every task, it says: read `project/REQUIREMENTS.md` for current status. The file stays short because it delegates to other files rather than repeating their contents.
+**It points, it doesn't duplicate**: Instead of listing every task, it says: read `project/tasks.md` for what's open right now. The file stays short because it delegates to other files rather than repeating their contents.
 **It states what can't be inferred from code**: A rule like "any non-trivial technical decision gets a new numbered file in `project/adr/`" isn't something Claude could guess by reading the codebase. That's exactly the kind of thing that belongs here.
 **It's organized by when you'd need it**: Sections for "before starting work," "while working," and "repo layout" map to the actual moments in a session, not an abstract table of contents.
 

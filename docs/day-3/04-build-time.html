@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build Time - Day 3 - AI News Innovation Workshop</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/briefing.css">
+</head>
+<body class="briefing briefing-overview" data-day="3" data-session-id="day-3/04-build-time">
+  <div id="nav"></div>
+
+  <main>
+    <div class="breadcrumb"><a href="/">Home</a> &gt; <a href="/day-3/">Day 3</a> &gt; Build Time</div>
+
+    <header class="masthead">
+      <h1 class="masthead-title">Build Time</h1>
+      <p class="masthead-dek">An extra build block before lunch. Take one thing from this morning and actually ship it.</p>
+      <div class="masthead-meta"><span id="topic-time">--</span><span class="div">·</span><span id="topic-duration">--</span><span class="div">·</span><span id="topic-type">--</span></div>
+    </header>
+
+    <nav class="toc" aria-label="Sections in this briefing">
+      <ol>
+        <li><a href="#s1"><span class="n">01</span> Get Set Up: Deploy to Vercel</a></li>
+        <li><a href="#s2"><span class="n">02</span> Apply What You Just Covered</a></li>
+        <li><a href="#s3"><span class="n">03</span> Build</a></li>
+      </ol>
+    </nav>
+
+    <section class="slides-cta">
+      <p>Prefer to move through this section by section, presentation-style?</p>
+      <a class="slides-cta-link" href="slides/04-build-time-slides.html">Open the slides →</a>
+    </section>
+
+    <article>
+      <section class="block reveal" id="s1">
+        <div class="block-head"><span class="block-eyebrow">01</span><h2 class="block-title">Get Set Up: Deploy to Vercel</h2></div>
+        <p class="lede">Before you build, get a live URL for your project. This is the same platform this workshop site itself deploys on.</p>
+        <ul class="field-notes is-checklist">
+          <li>Go to <a href="https://vercel.com/signup" target="_blank" rel="noopener noreferrer">vercel.com/signup</a> and sign up with your GitHub account, the same one from Day 1 setup. It's free.</li>
+          <li>Click <strong>Add New</strong> &gt; <strong>Project</strong>, then find and import the repo your project actually lives in.</li>
+          <li>If your project's code is in a subfolder rather than the root of that repo, for example your submission folder inside the class repo, expand <strong>Root Directory</strong> in the import settings and point it at that subfolder before deploying.</li>
+          <li>Leave the framework and build settings on their auto-detected defaults unless you know they're wrong, then click <strong>Deploy</strong>.</li>
+          <li>Once it finishes, Vercel gives you a live <code>.vercel.app</code> URL. Save it, you'll want it for your submission card later.</li>
+        </ul>
+        <p>If the deploy fails, that's normal and part of the exercise. Paste the error into Claude Code and ask it to help you fix it.</p>
+      </section>
+
+      <section class="block reveal" id="s2">
+        <div class="block-head"><span class="block-eyebrow">02</span><h2 class="block-title">Apply What You Just Covered</h2></div>
+        <p class="lede">50 minutes is enough to actually build something, not just talk about it. Use it that way.</p>
+        <p>Safe &amp; Auditable Design and Human-AI Design both gave you a framework, not just a lecture. Now's the time to turn one piece of either into real, working code, not a plan for later.</p>
+        <ul class="field-notes">
+          <li>From Safe &amp; Auditable Design's checklist: do you actually have a kill switch, or a place a user can flag a wrong answer?</li>
+          <li>From Human-AI Design: is there a step in your product that's currently fully automated but should have a human checkpoint, or the reverse, a checkpoint that's slowing things down for no real safety reason?</li>
+          <li>From the disclosure patterns you just saw: could you add even the simplest version, an info button or a one-line label, right now?</li>
+        </ul>
+        <p>Pick one. Something small enough to actually finish in this window, not something that spawns three more decisions before you can start.</p>
+      </section>
+
+      <section class="block reveal" id="s3">
+        <div class="block-head"><span class="block-eyebrow">03</span><h2 class="block-title">Build</h2></div>
+        <div class="exercise-box">
+          <h3>🛠️ Build Time</h3>
+          <p><strong>Time:</strong> The rest of this session.</p>
+          <p><strong>Description:</strong> Implement one specific decision from this morning, a kill switch, a human checkpoint, a disclosure pattern, actually working in your project, not just planned.</p>
+          <p><strong>Deliverable:</strong> Something concrete to point at. Ideally something Final Coding Time this afternoon can build on rather than repeat.</p>
+        </div>
+      </section>
+    </article>
+
+    <footer class="topic-nav">
+      <a id="prev-link" href="#">← Previous</a>
+      <a href="/day-3/">Day 3 Overview</a>
+      <a id="next-link" href="#">Next →</a>
+    </footer>
+  </main>
+
+  <div id="footer"></div>
+
+  <script src="/js/partials.js"></script>
+  <script src="/js/nav.js"></script>
+  <script src="/js/topic-metadata.js"></script>
+  <script src="/js/reveal.js"></script>
+  <script src="/js/citations.js"></script>
+  <script src="/js/click-effect.js"></script>
+</body>
+</html>

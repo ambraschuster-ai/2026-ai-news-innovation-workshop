@@ -6,7 +6,7 @@ description: Research-first grounding pass for this workshop site's copy-drafts.
 # Ground content
 
 This codifies the research discipline built up across Day 2, Day 3, and Day
-1's 2026-08-21 rewrite (see `project/REQUIREMENTS.md`'s Change log for the
+1's 2026-08-21 rewrite (see `project/CHANGELOG.md`'s Change log for the
 full history). The pattern: plan the scope, dedup-check against what the
 rest of the site already owns, run parallel background research agents with
 a fixed set of standing rules, write from what they find, then verify.
@@ -117,12 +117,11 @@ better results. Every agent brief includes these fixed rules:
 
 ## Step 5 — Log it
 
-Add a dated entry to `project/REQUIREMENTS.md`'s `## Change log` (newest
+Add a dated entry to `project/CHANGELOG.md`'s `## Change log` (newest
 entries go directly under the header, it's reverse-chronological), at the
 same level of detail as the existing Day 2/Day 3 build entries: why this
 pass happened, what was found worth flagging, what got deliberately
-excluded and why, and what verification ran clean. Update the "Where
-things stand" pointer near the top of the file too if this changes the
-current status. Don't skip this even for a small follow-up pass, half of
-this skill's own origin was another session losing track of exactly this
-kind of detail.
+excluded and why, and what verification ran clean. Update `project/tasks.md`
+too if this changes what's currently open. Don't skip this even for a small
+follow-up pass, half of this skill's own origin was another session losing
+track of exactly this kind of detail.

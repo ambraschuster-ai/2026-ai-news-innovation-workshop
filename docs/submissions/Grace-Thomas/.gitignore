@@ -1,0 +1,3 @@
+config/gcp_credentials.json
+config/gmail_token.json
+.DS_Store

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" class="briefing-deck">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build Time - Slides - Day 3 - AI News Innovation Workshop</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/briefing.css">
+</head>
+<body class="briefing briefing-deck">
+
+  <div class="chrome-top">
+    <span class="chrome-eyebrow">
+      <a href="/">AI News Innovation Workshop</a><span class="sep">·</span><a href="/day-3/">Day 3</a><span class="sep">·</span><a href="../04-build-time.html">Build Time</a><span class="sep">·</span>Slides
+    </span>
+    <div class="chrome-right">
+      <span class="chrome-counter" id="counter">01 / 03</span>
+      <button type="button" class="chrome-fs" id="fs-toggle" aria-label="Toggle fullscreen">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+          <path d="M21 8V5a2 2 0 0 0-2-2h-3"></path>
+          <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
+          <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="deck">
+      <div class="track" id="track">
+
+        <section class="slide slide-cover" data-slide="cover">
+          <div class="slide-inner">
+            <h1 class="cover-title">Build Time</h1>
+            <p class="cover-dek">An extra build block before lunch. Take one thing from this morning and actually ship it.</p>
+            <div class="cover-meta"><span>12:10 PM</span><span class="div">·</span><span>50 MIN</span><span class="div">·</span><span>Hands-on</span></div>
+            <ul class="cover-contents">
+              <li><button type="button" data-jump="s1"><span class="n">01</span> Get Set Up: Deploy to Vercel</button></li>
+              <li><button type="button" data-jump="s2"><span class="n">02</span> Apply What You Just Covered</button></li>
+              <li><button type="button" data-jump="s3"><span class="n">03</span> Build</button></li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="slide" data-slide="s1">
+          <div class="slide-inner">
+            <div class="block-head"><span class="block-eyebrow">01</span><h2 class="block-title">Get Set Up: Deploy to Vercel</h2></div>
+            <p class="lede">Before you build, get a live URL for your project. Same platform this workshop site itself deploys on.</p>
+            <ul class="field-notes is-checklist">
+              <li>Sign up free at <a href="https://vercel.com/signup" target="_blank" rel="noopener noreferrer">vercel.com/signup</a> with your GitHub account.</li>
+              <li><strong>Add New</strong> &gt; <strong>Project</strong>, import your project's repo.</li>
+              <li>In a subfolder, not the repo root? Set <strong>Root Directory</strong> before deploying.</li>
+              <li>Leave settings on auto-detected defaults, click <strong>Deploy</strong>.</li>
+              <li>Save the live URL, you'll want it for your submission card.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="slide" data-slide="s2">
+          <div class="slide-inner">
+            <div class="block-head"><span class="block-eyebrow">02</span><h2 class="block-title">Apply What You Just Covered</h2></div>
+            <p class="lede">50 minutes is enough to actually build something, not just talk about it. Use it that way.</p>
+            <ul class="field-notes">
+              <li>From Safe &amp; Auditable Design: do you actually have a kill switch, or a place a user can flag a wrong answer?</li>
+              <li>From Human-AI Design: a step that's fully automated but needs a human checkpoint, or the reverse?</li>
+              <li>From the disclosure patterns: could you add the simplest version right now, an info button or a one-line label?</li>
+            </ul>
+            <p>Pick one. Something small enough to actually finish in this window.</p>
+          </div>
+        </section>
+
+        <section class="slide" data-slide="s3">
+          <div class="slide-inner">
+            <div class="block-head"><span class="block-eyebrow">03</span><h2 class="block-title">Build</h2></div>
+            <div class="exercise-box">
+              <h3>🛠️ Build Time</h3>
+              <p><strong>Description:</strong> Implement one specific decision from this morning, actually working, not just planned.</p>
+              <p><strong>Deliverable:</strong> Something concrete to point at, ideally something Final Coding Time can build on rather than repeat.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide slide-end" data-slide="end">
+          <div class="slide-inner">
+            <div class="end-links">
+              <a href="#" data-jump="cover">↺ Restart</a>
+              <a href="/day-3/">← Back to schedule</a>
+              <a href="../05-final-coding-time.html">Next section →</a>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <button type="button" class="edge-arrow edge-prev" id="prev-btn" aria-label="Previous section">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 4 7 12 15 20"></polyline></svg>
+    </button>
+    <button type="button" class="edge-arrow edge-next" id="next-btn" aria-label="Next section">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 4 17 12 9 20"></polyline></svg>
+    </button>
+    <div class="dot-nav" id="dots"></div>
+  </div>
+
+  <script src="/js/deck.js"></script>
+  <script src="/js/citations.js"></script>
+  <script src="/js/click-effect.js"></script>
+</body>
+</html>
