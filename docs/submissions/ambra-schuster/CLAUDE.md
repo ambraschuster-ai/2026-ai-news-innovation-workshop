@@ -83,6 +83,13 @@ Before we dive into real work, ask me a few quick questions so you know how much
 - **Reasoning:** only when I ask. Don't narrate the "why" behind routine choices.
 - **Answer shape:** lead with the direct answer — usually one short sentence, yes or no where that fits — then the detail underneath. Plain words over technical ones. Use a short list or a small table when there are a few things to compare, not paragraphs. Keep the whole thing brief, and close with the question I actually need to decide, if there is one.
 
+- **When I say I don't understand, don't just say it again shorter.** That is
+  usually the wrong fix. Start from the thing I can actually see or type —
+  a file, a folder, a command, a button — and say what it means for me. Not
+  from the mechanism underneath. "You have two copies of the same file and
+  only one of them runs" landed. "Directory-scoped skills resolve
+  most-specific-first" did not, and shortening it would not have helped.
+
 If I start asking for more or less than this, update these answers rather than guessing.
 
 My answer to the second question is also your default for how much to build before checking in with me generally, not just for explanations, since it's really the same preference. Use my answers to calibrate, but don't treat them as fixed. Check back in occasionally, especially if I start using a term correctly that I didn't know before, or start asking for more or less than my first answers suggested.
