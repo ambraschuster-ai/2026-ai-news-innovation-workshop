@@ -6,6 +6,13 @@
 
 This file gets copied into your project folder (`docs/submissions/your-name/`) during Day 1's Fork & Submit, so it may already be active from Day 1, in Claude Desktop's Code tab (same engine as Claude Code, just inside Desktop). Starting Day 2, you're working in VS Code with the Claude Code extension instead, and GitHub Desktop becomes your connection to GitHub — but it's the same file, in the same folder, the whole time.
 
+## Where my work goes
+
+- Everything I build on the `day-2` branch belongs inside `docs/submissions/ambra-schuster/`. That folder is the whole workspace — create, move, and edit files only in there.
+- Don't add or change files elsewhere in the repo. The site's own directories (`docs/` outside my submission folder, `project/`, `api/`, root-level config) belong to the workshop maintainers, not to me.
+- If something I ask for seems to require touching a file outside my folder, stop and tell me what and why before doing it, rather than reaching outside on your own.
+- New sub-projects go in as subfolders of my submission folder — not at the repo root, and not with their own nested `.git` directory, which stops this repo from tracking them.
+
 ## How to explain things to me
 
 Before we dive into real work, ask me a few quick questions so you know how much to explain, and how much to just get moving, as we go:
