@@ -1,8 +1,10 @@
 # Project 3 — Retrieval + Answer Engine · requirements
 
-> **Status: not started.** Planning depth. The gold-set source is
-> unresolved (task A.1 in Project 1), and this project's shape depends
-> on the answer.
+> **Status: a working mockup exists** (`../mockup/`, Aug 25 2026) on a
+> 38-article sample in two languages. The requirements below are unchanged
+> and still describe the finished thing — the mockup meets some of them on a
+> sample and none of them at scale. The gold-set source is still unresolved
+> (task A.1 in Project 1).
 > Companion files: [architecture.md](architecture.md), [tasks.md](tasks.md).
 
 ## The problem
@@ -50,6 +52,24 @@ holds the answer; retrieving it is the hard part.
 - Messaging channels and voice. → Project 4
 - Logging or analyzing questions. → Project 5
 - Machine-translating articles to fill retrieval gaps. Report the gap.
+
+  **Clarified Aug 25 2026, after the mockup ran into it.** The mockup offers
+  a button that restates a finished answer in Kreyòl or Chinese, and it has
+  not read Documented's Creole or Chinese articles. That is close enough to
+  this line to need a ruling, so: **translating an answer is allowed;
+  translating an article into the index is not.** The difference is what a
+  reader is led to believe. Indexing translated articles would let a
+  machine-made sentence be retrieved and cited as though Documented had
+  written it in that language. Restating an answer changes only the language
+  of something already grounded, adds no facts — no search tool, no corpus,
+  no history in that call — and is checked afterwards for both invented and
+  dropped links.
+
+  The condition is that the gap is still reported, prominently, to the
+  reader and not only in a doc: the page says under every such answer that
+  it is a translation and that Documented publishes ~151 Creole and ~216
+  Chinese articles this prototype has not read. If that disclosure is ever
+  dropped, this stops being allowed.
 - Any answer generated from the model's own knowledge rather than from
   retrieved Documented content. This is the line the whole project rests on.
 
