@@ -1,0 +1,17 @@
+# Things in my project that must never reach GitHub.
+#
+# Lives here rather than in the repo's root .gitignore so my project keeps
+# its own housekeeping to itself. Git reads a .gitignore in any directory
+# and applies it to everything beneath, so these paths are relative to this
+# folder.
+
+# My Anthropic API key.
+documented-answers/mockup/.env
+
+# Documented's article text, pulled from documentedny.com. Theirs, not mine
+# to republish. The deployed app gets it as a Secret File instead.
+documented-answers/mockup/corpus.json
+
+# Written at runtime: the daily message counter and the usage/cost record.
+documented-answers/mockup/.daily-count
+documented-answers/mockup/.usage.json

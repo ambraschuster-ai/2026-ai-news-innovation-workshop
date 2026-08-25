@@ -5,10 +5,22 @@ description: End-of-session wrap-up for Ambra Schuster's Documented NY project i
 
 # Chat close (Ambra's)
 
-> Named `chat_close_ambra` so it can never be confused with the workshop's
-> own `/chat_close`, which belongs to Andrew and wraps up the site repo's
-> `project/` files. This one is only about
-> `docs/submissions/ambra-schuster/`.
+> **This file is the only wrap-up to use. Ignore `/chat_close` at the top of
+> the repo.**
+>
+> That other skill is Andrew's. It wraps up the workshop site — `project/tasks.md`,
+> `project/CHANGELOG.md`, `project/adr/` — none of which are mine to touch.
+> Running it against my work would edit the maintainers' files.
+>
+> It will not always be obvious which one you have. `/chat_close` is the name
+> the tooling offers, because only skills in the repo root's `.claude/skills/`
+> are registered as slash commands and this one lives in my folder. So when I
+> ask to wrap up, read *this* file and follow it — do not run `/chat_close`,
+> and do not fall back to it if `/chat_close_ambra` comes back "unknown
+> command". That message means the slash command is not registered, not that
+> the instructions are missing.
+>
+> If the two ever disagree, this file wins for my work, every time.
 
 Run this at the end of a session, before switching tasks, so nothing worked
 on this session only lives in the conversation. Docs first, then commits, so

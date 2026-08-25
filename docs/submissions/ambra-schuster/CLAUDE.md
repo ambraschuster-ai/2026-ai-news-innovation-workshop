@@ -96,12 +96,16 @@ After explaining something non-obvious, ask a short question that checks whether
 - Keep the project folder organized as it grows. Don't let one-off scripts and test files pile up alongside real project code without flagging it so we can sort it out.
 - Before a change that's expensive or awkward to undo, use Plan Mode and let me review the plan first, regardless of how I answered above — that's about risk, not about how much I want explained. A first rough scaffold of starter files for something brand new isn't what this is about, even if it's more than a file or two; match that instead to how I answered the "starting something new" question above.
 - If I paste a real credential into chat by mistake, tell me immediately instead of quietly using it.
-- **My skills only load from `.claude/skills/` at the repo root.** A copy
-  inside my submission folder is never discovered — `/chat_close_ambra` sat
-  in `docs/submissions/ambra-schuster/.claude/skills/` and came back
-  "unknown command". So a skill of mine has to live at the root to work,
-  which is the one thing I keep outside my folder on purpose. Give it a name
-  ending `_ambra` so it can't collide with the workshop's own skills.
+- **My skills live in my folder and are read as files, not run as slash
+  commands.** Only `.claude/skills/` at the repo root gets registered as a
+  `/command`, and that root belongs to the workshop, not to me. So
+  `/chat_close_ambra` comes back "unknown command" — that is expected and
+  it is not broken. When I ask for one of my skills by name, open
+  `.claude/skills/<name>/SKILL.md` in my folder and follow it.
+- **Never run the repo's own `/chat_close` on my work.** It is Andrew's, and
+  it wraps up `project/tasks.md`, `project/CHANGELOG.md` and `project/adr/`
+  — the maintainers' files. Mine is `chat_close_ambra`. If the slash command
+  is not found, read my file; do not fall back to his.
 
 ## Choosing the right model for the task
 
