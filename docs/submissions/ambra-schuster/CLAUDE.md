@@ -13,6 +13,47 @@ This file gets copied into your project folder (`docs/submissions/your-name/`) d
 - If something I ask for seems to require touching a file outside my folder, stop and tell me what and why before doing it, rather than reaching outside on your own.
 - New sub-projects go in as subfolders of my submission folder — not at the repo root, and not with their own nested `.git` directory, which stops this repo from tracking them.
 
+## The Documented NY project — read these first
+
+The project I'm building lives in `documented-answers/`. It's split into
+five projects. **Each one has its own three files**, and they are the source
+of truth — not `PLAN.md`, which is the original research and background, and
+not this file.
+
+| Project | Status | Docs |
+|---|---|---|
+| **1 — Archive & audit** | **Active** | [requirements](documented-answers/project-1-archive-audit/requirements.md) · [architecture](documented-answers/project-1-archive-audit/architecture.md) · [tasks](documented-answers/project-1-archive-audit/tasks.md) |
+| 2 — Freshness engine | Not started | [requirements](documented-answers/project-2-freshness-engine/requirements.md) · [architecture](documented-answers/project-2-freshness-engine/architecture.md) · [tasks](documented-answers/project-2-freshness-engine/tasks.md) |
+| 3 — Retrieval + answer engine | Not started | [requirements](documented-answers/project-3-answer-engine/requirements.md) · [architecture](documented-answers/project-3-answer-engine/architecture.md) · [tasks](documented-answers/project-3-answer-engine/tasks.md) |
+| 4 — Channels + voice | Not started | [requirements](documented-answers/project-4-channels-voice/requirements.md) · [architecture](documented-answers/project-4-channels-voice/architecture.md) · [tasks](documented-answers/project-4-channels-voice/tasks.md) |
+| 5 — Listening loop | Not started | [requirements](documented-answers/project-5-listening-loop/requirements.md) · [architecture](documented-answers/project-5-listening-loop/architecture.md) · [tasks](documented-answers/project-5-listening-loop/tasks.md) |
+
+**I'm only working on Project 1 right now.** Read Project 1's three files at
+the start of every session. Read another project's docs only when I say
+we're moving to it. Projects 2–5 are written at planning depth, so don't
+treat their details as settled — they get rewritten before that project
+starts.
+
+### How to work against these files
+
+- **Before building anything**, propose a plan against Project 1's
+  `requirements.md` and `architecture.md`, and let me see it first. Don't
+  start from your own read of what the project needs.
+- **Don't decide on your own that something looks done.** Check it against
+  the specific *Done when* line in `tasks.md`. If that line isn't literally
+  true yet, the task isn't finished — say so instead of moving on.
+- **Check tasks off in `tasks.md`** as they're actually completed, and add
+  newly discovered work to the right stage rather than letting it float.
+- **If the work wants to go outside what `requirements.md` says**, stop and
+  tell me. That includes drifting into another project's scope — each
+  `requirements.md` has an explicit "out of scope" section, and those
+  boundaries are deliberate, not oversights.
+- **If a decision in `architecture.md` turns out to be wrong**, say so and
+  we'll change the file. Don't quietly build something different from what
+  it describes.
+- **When something in these files goes stale**, update it in the same
+  commit as the code that made it stale.
+
 ## How to explain things to me
 
 Before we dive into real work, ask me a few quick questions so you know how much to explain, and how much to just get moving, as we go:
@@ -20,6 +61,14 @@ Before we dive into real work, ask me a few quick questions so you know how much
 - When you hear a term like "API," "environment variable," "commit," or "dependency," do I already know what it means, or should you explain it the first time it comes up?
 - When we're starting something new, or something breaks, do you want to get moving and explain after (a rough first version, a fix, whatever's fastest), or talk me through the plan or what went wrong before you touch anything?
 - Do I want the "why" behind every technical choice you make, or only when it's non-obvious?
+
+**My answers (Aug 25, 2026):**
+
+- **Jargon:** explain a technical term the first time it comes up, briefly. After that, use it normally.
+- **Working style:** depends on size. Small things, just do them. Anything substantial or hard to undo, check with me first. (This is also the default for how much to build before checking in.)
+- **Reasoning:** only when I ask. Don't narrate the "why" behind routine choices.
+
+If I start asking for more or less than this, update these answers rather than guessing.
 
 My answer to the second question is also your default for how much to build before checking in with me generally, not just for explanations, since it's really the same preference. Use my answers to calibrate, but don't treat them as fixed. Check back in occasionally, especially if I start using a term correctly that I didn't know before, or start asking for more or less than my first answers suggested.
 
