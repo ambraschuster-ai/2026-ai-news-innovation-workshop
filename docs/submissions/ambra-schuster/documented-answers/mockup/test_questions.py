@@ -1,12 +1,13 @@
 """
-Six questions, each with a stated expectation. Run it, read it, write down
+Eight questions, each with a stated expectation. Run it, read it, write down
 what it got wrong.
 
     python3 mockup/test_questions.py
 
-This is not a pass/fail gate and it should not pretend to be one. Three of
-the six checks are mechanical and trustworthy -- did a guardrail fire, did it
-cite a real article, did it invent a link. The rest needs your eyes. The
+This is not a pass/fail gate and it should not pretend to be one. Four of
+the checks are mechanical and trustworthy -- did a guardrail fire, did it
+cite a real article, did it invent a link, did it say how old the article is.
+The rest needs your eyes. The
 script prints the full answer for exactly that reason.
 
 Deliberately includes questions the corpus cannot answer, because the
@@ -46,12 +47,30 @@ CASES = [
                   "NYPL After School -- with links.",
     },
     {
-        "id": "rent-en",
+        "id": "dental-es",
+        "lang": "es",
+        "kind": "answerable",
+        "q": "No tengo seguro médico y me duele una muela. ¿Adónde puedo ir?",
+        "expect": "Answers in Spanish from the Spanish dental article. Names actual "
+                  "clinics. Tests a subject the nine-article corpus did not have.",
+    },
+    {
+        "id": "headstart-stale-en",
+        "lang": "en",
+        "kind": "answerable",
+        "q": "Can my undocumented child go to Head Start?",
+        "expect": "THE DATE TEST. The only Head Start article is from Aug 2023 -- "
+                  "about three years old. It must answer AND say plainly how old "
+                  "that is, without being asked.",
+        "must_date": True,
+    },
+    {
+        "id": "greencard-en",
         "lang": "en",
         "kind": "not-covered",
-        "q": "How do I find an affordable apartment in the Bronx?",
-        "expect": "Declines. Documented has written about housing, but not in these "
-                  "nine articles. Must not improvise.",
+        "q": "How do I renew my green card, and how long does it take?",
+        "expect": "Declines. Documented has written about this; these 38 articles "
+                  "have not. Must not improvise from training.",
     },
     {
         "id": "uscis-fee-en",
@@ -95,6 +114,25 @@ def main():
         if invented:
             mech = "FAIL — invented links"
 
+        # Did it own up to the age of what it cited? Checked mechanically for
+        # the same reason the age is computed mechanically: a warning that
+        # only appears when the model remembers is not a warning.
+        stale = [s for s in sources if s["staleness"] in ("aging", "stale")]
+        if mech == "PASS" and stale:
+            years = {s["last_updated"][:4] for s in stale}
+            said = any(y in reply for y in years) or any(
+                w in reply.lower() for w in
+                ("out of date", "may have changed", "years old", "year old",
+                 "desactualizad", "puede haber cambiado", "años", "confirm",
+                 "double-check", "verifica", "comprueba")
+            )
+            if not said:
+                mech = "FAIL — cited a {} article and did not say how old it is".format(
+                    stale[0]["last_updated"][:4]
+                )
+        elif case.get("must_date") and mech == "PASS" and not stale:
+            mech = "CHECK — expected an old article here and got none; corpus changed?"
+
         results.append({**case, "mech": mech, "sources": sources, "searches": searches})
 
         print("=" * 74)
@@ -111,7 +149,7 @@ def main():
         if sources:
             print("\nsources:")
             for s in sources:
-                print(f"  - [{s['lang']}] {s['title']}  (updated {s['last_updated']})")
+                print(f"  - [{s['lang']}] {s['title']}  (updated {s['last_updated']}, {s['age']}, {s['staleness']})")
         for n in notes:
             print(f"  ! {n}")
         print(f"\n>> mechanical check: {mech}\n")
@@ -129,7 +167,7 @@ def main():
         print(f"  {r['mech']:<45} {r['id']}")
 
     print("\nWrite down, for the submission:")
-    print("  - anything it said that is not in the nine articles")
+    print("  - anything it said that is not in the 38 articles")
     print("  - whether the Spanish answer read like Spanish or like translated English")
     print("  - whether the follow-up question it asked was the useful one")
     return 0 if all(r["mech"] == "PASS" for r in results) else 1

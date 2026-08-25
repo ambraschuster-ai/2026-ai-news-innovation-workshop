@@ -6,21 +6,71 @@
 <pre id="log">starting…</pre>
 
 <script>
-// Nine hand-picked articles covering the "schools in NYC, two kids" case.
-// Six English, three Spanish -- enough to test both the conversation and
-// whether it answers in the language it was asked in.
+// Thirty-eight hand-picked articles from Documented's resource guide: 23
+// English, 15 Spanish.
+//
+// Round one was nine education articles, which proved the machinery. This
+// round is chosen to stress it in the ways a real reader would. It spans the
+// subjects people actually arrive with -- schools, health, food, housing,
+// work, legal help, ID and transit -- because a bot that only knows about
+// schools looks fine until the second question. Every subject appears in
+// both languages wherever Documented has published it in both, so the same
+// question can be asked twice and the answers compared.
+//
+// It also deliberately includes old articles alongside new ones. The Head
+// Start piece is from 2023; several are from this month. That spread is what
+// the staleness flag has to catch, and a corpus of uniformly fresh articles
+// would test nothing.
+//
+// These are still a sample of ~250 English resource articles, not the guide.
+// Picked by hand rather than by "most recent" so the coverage is deliberate.
 const EN = [
+  // education and children
   "iep-guide-special-education-services-nyc",
   "where-nyc-students-can-get-free-homework-help-and-after-school-tutoring",
   "parent-teacher-conferences-questions-students",
   "immigrants-enroll-headstart-schools-nyc",
   "free-affordable-child-care-nyc-promise-voucher",
   "college-fafsa-scholarship-cuny-suny-nyc",
+  "high-school-equivalency-exam-diploma",
+  "mental-health-immigrant-children",
+  // food
+  "summer-ebt-how-to-get-120-per-child-for-groceries-this-summer-in-nyc",
+  "nyc-kids-students-free-summer-meal-food",
+  "new-snap-rules-in-ny-what-to-know-if-you-lost-benefits",
+  // health
+  "low-cost-dental-care-nyc",
+  "low-cost-eye-care-nyc",
+  "free-women-health-resources",
+  // housing and money
+  "nyc-warranty-habitability-guide",
+  "income-generation-immigrant-nyc",
+  // getting around, ID, connectivity, language
+  "idnyc-card-what-is-how-to-apply-and-its-benefits",
+  "fare-fares-reduced-subway-mta",
+  "nyc-free-phone-internet",
+  "free-english-course-for-immigrants-in-new-york-city",
+  "new-york-library-card-where-free",
+  // legal help -- the place the guardrails send people, so it needs sources
+  "pro-bono-lawyers-and-free-legal-immigration-services-in-new-york",
+  "language-assistance-for-immigrants-in-nyc",
 ];
 const ES = [
   "programas-gratuitos-ninos-inmigrantes-nueva-york",
   "ayuda-gratuita-tareas-hijos",
   "reuniones-padres-maestros-profesores-escuelas",
+  "diploma-equivalencia-escuela-secundaria-ged-inmigrantes-nyc",
+  "salud-mental-para-inmigrantes",
+  "dentista-bajo-costo-nyc",
+  "atencion-gratuita-mujer-salud",
+  "comidas-verano-gratis-lugares",
+  "nevera-comunitaria-como-funciona",
+  "vivienda-asequible-ciudad-de-nueva-york",
+  "cunas-gratis-nueva-york-panales",
+  "spanish-language-tanf-cash-rent-assistance-emergency-hra",
+  "abogados-gratis-en-nueva-york-para-temas-de-inmigracion",
+  "clinicas-legales-gratuitas-en-nueva-york",
+  "como-usar-metro-nyc-nueva-york",
 ];
 
 // Newsletter / WhatsApp sign-up boilerplate sits inside every article body.
@@ -32,10 +82,17 @@ const log = m => { document.getElementById('log').textContent += "\n" + m; };
 async function grab(slugs, lang) {
   const url = "https://documentedny.com/wp-json/wp/v2/posts"
             + "?slug=" + slugs.join(",")
-            + "&per_page=20&_fields=id,slug,link,modified,title,content";
+            + "&per_page=60&_fields=id,slug,link,modified,title,content";
   const r = await fetch(url, { credentials: "include" });
   if (!r.ok) throw new Error(lang + " fetch returned " + r.status);
   const posts = await r.json();
+
+  // A mistyped or retired slug comes back as silence, not an error. Say so
+  // out loud -- otherwise the corpus is quietly smaller than it claims and
+  // the banner on the chat page starts lying about how much it has read.
+  const got = new Set(posts.map(p => p.slug));
+  const missing = slugs.filter(s => !got.has(s));
+  if (missing.length) log("  !! not found (" + lang + "): " + missing.join(", "));
 
   return posts.map(p => {
     const d = new DOMParser().parseFromString(p.content.rendered, "text/html");
@@ -53,6 +110,30 @@ async function grab(slugs, lang) {
     // headings are wrapped in layout divs, so they are not siblings of the
     // paragraphs they head and a children-only walk finds nothing.
     const chunks = d.body.innerHTML.split(/(?=<h[23][\s>])/i);
+
+    // Pull the text and outbound links out of a fragment of article HTML.
+    const readable = frag => {
+      const c = new DOMParser().parseFromString(frag, "text/html");
+      return {
+        text: c.body.textContent.replace(CTA, " ").replace(/\s+/g, " ").trim(),
+        links: [...new Set(
+          [...c.querySelectorAll("a[href]")]
+            .map(a => a.getAttribute("href"))
+            .filter(h => h && h.startsWith("http") && !h.includes("documentedny.com"))
+        )],
+      };
+    };
+
+    // Anything longer than this gets cut down before it is stored, because
+    // the bot only ever sends the first 2,000 characters of a section to the
+    // model. Three of these articles -- the free English courses, the legal
+    // clinics, the women's health services -- have no subheadings at all and
+    // arrive as one 4,000-8,000 character list. Stored whole, three quarters
+    // of each would be invisible to the bot: it would confidently name the
+    // first two clinics on a list of twelve. Splitting them keeps every entry
+    // reachable by search.
+    const MAX_SECTION = 2200;
+
     const sections = [];
     for (const chunk of chunks) {
       const c = new DOMParser().parseFromString(chunk, "text/html");
@@ -60,15 +141,29 @@ async function grab(slugs, lang) {
       const heading = head ? head.textContent.trim() : null;
       if (head) head.remove();
 
-      const text = c.body.textContent.replace(CTA, " ").replace(/\s+/g, " ").trim();
-      if (text.length < 60) continue;
+      const whole = readable(c.body.innerHTML);
+      if (whole.text.length < 60) continue;
+      if (whole.text.length <= MAX_SECTION) {
+        sections.push({ heading, text: whole.text, links: whole.links });
+        continue;
+      }
 
-      const links = [...new Set(
-        [...c.querySelectorAll("a[href]")]
-          .map(a => a.getAttribute("href"))
-          .filter(h => h && h.startsWith("http") && !h.includes("documentedny.com"))
-      )];
-      sections.push({ heading, text, links });
+      // Too long: regroup its blocks into pieces, splitting only at the top
+      // of a paragraph, list or sub-heading so no entry is cut in half.
+      let buf = "";
+      const flush = () => {
+        if (!buf) return;
+        const part = readable(buf);
+        if (part.text.length >= 60) {
+          sections.push({ heading, text: part.text, links: part.links });
+        }
+        buf = "";
+      };
+      for (const block of c.body.innerHTML.split(/(?=<(?:p|ul|ol|h4|h5|table|blockquote)[\s>])/i)) {
+        if (buf && readable(buf + block).text.length > MAX_SECTION) flush();
+        buf += block;
+      }
+      flush();
     }
 
     return {

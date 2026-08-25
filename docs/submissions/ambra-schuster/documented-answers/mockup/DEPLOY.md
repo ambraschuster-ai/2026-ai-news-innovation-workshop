@@ -51,6 +51,9 @@ Both must print a matching rule. If either prints nothing, stop.
    - Contents: paste all of your local `mockup/corpus.json`
 
    This is how the articles get to the server without going through git.
+   It is about 283 KB — a long paste, but well inside Render's limit. Check
+   the saved file's size afterwards; a truncated paste produces a bot that
+   silently knows less than the banner says it does.
 
 5. Deploy. When it's live, open the URL and check `/healthz` returns
    `{"ok":true}`.
@@ -84,7 +87,7 @@ code change:
 | variable | default | what it does |
 |---|---|---|
 | `MAX_PER_SESSION` | 15 | messages per visitor before it stops and tells them |
-| `MAX_PER_DAY` | 400 | total messages across everyone, resets at UTC midnight |
+| `MAX_PER_DAY` | 150 | total messages across everyone, resets at UTC midnight |
 
 Both fail closed — when the budget is gone, no API call is made at all.
 
