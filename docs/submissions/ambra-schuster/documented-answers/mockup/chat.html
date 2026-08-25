@@ -64,9 +64,32 @@
   .body a { color: var(--accent); }
   .body strong { font-weight: 600; }
   .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: .1rem 0 .7rem; }
+  .chips:empty { display: none; }
   .chip {
     background: var(--chip); border: 1px solid var(--line); border-radius: 20px;
     padding: .15rem .65rem; font-size: .75rem; color: var(--muted);
+  }
+  .langs {
+    display: flex; flex-wrap: wrap; gap: .35rem; align-items: center;
+    margin-top: .9rem; padding-top: .75rem; border-top: 1px solid var(--line);
+  }
+  .langs > span {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted); margin-right: .2rem;
+  }
+  .langs button {
+    background: var(--chip); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 20px; padding: .22rem .75rem; font: inherit;
+    font-size: .78rem; cursor: pointer;
+  }
+  .langs button:hover:not(:disabled) { border-color: var(--accent); }
+  .langs button[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .langs button:disabled { opacity: .5; cursor: default; }
+  .translated {
+    margin-top: .6rem; font-size: .75rem; color: var(--muted);
+    border-left: 2px solid var(--line); padding-left: .6rem;
   }
   .sources {
     margin-top: .9rem; padding-top: .7rem; border-top: 1px solid var(--line);
@@ -139,6 +162,8 @@
       <p>Hi — I've read 38 articles from Documented's resource guide: schools
       and childcare, food and SNAP, health and dental, housing, work, free legal
       help, IDNYC and getting around. Ask me in English or Spanish.</p>
+      <p>Every answer comes with buttons to read it again in <b>Easy English,
+      Español, Kreyòl Ayisyen or 中文</b>.</p>
       <p>Those 38 are all I know, so try me on something they cover:</p>
       <div class="examples">
         <button onclick="suggest(this)">I'm Colombian and have two kids. What do I need to know about schools in New York?</button>
@@ -167,6 +192,34 @@
 const log = document.getElementById('logwrap');
 const box = document.getElementById('box');
 const btn = document.getElementById('btn');
+
+// The languages Documented has actually published resource articles in that
+// this prototype has read. Anything outside this list is a translation of
+// their English or Spanish reporting, and the page says so rather than
+// letting it pass as their own writing in that language.
+const CORPUS_LANGS = ['en', 'es'];
+
+const LANGS = [
+  { code: 'easy', label: 'Easy English' },
+  { code: 'es',   label: 'Español' },
+  { code: 'ht',   label: 'Kreyòl Ayisyen' },
+  { code: 'zh',   label: '中文' },
+];
+
+const TRANSLATED_NOTE = {
+  easy: null,
+  es: 'Translated from an English article — this prototype didn’t find a '
+    + 'Spanish article from Documented on this. Documented does publish in '
+    + 'Spanish; these 38 articles just don’t cover it.',
+  ht: 'Translated. Documented publishes a resource guide in Kreyòl Ayisyen — '
+    + 'about 150 articles — but this prototype hasn’t read them, so this is a '
+    + 'machine translation of their English or Spanish reporting, not their '
+    + 'own Creole writing.',
+  zh: 'Translated. Documented publishes a resource guide in Chinese — about '
+    + '216 articles — but this prototype hasn’t read them, so this is a '
+    + 'machine translation of their English or Spanish reporting, not their '
+    + 'own Chinese writing.',
+};
 
 // Just enough markdown for what the bot writes: links, bold, bullets.
 function render(md) {
@@ -204,6 +257,113 @@ function bubble(who, cls) {
 }
 const scroll = () => { const l = document.getElementById('log'); l.scrollTop = l.scrollHeight; };
 
+// One reader for both routes: asking a question and pressing a language
+// button stream back the same event shapes.
+async function consume(url, payload, onEvent) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const parts = buf.split('\n\n');
+    buf = parts.pop();
+    for (const part of parts) {
+      if (!part.startsWith('data: ')) continue;
+      const { kind, data } = JSON.parse(part.slice(6));
+      onEvent(kind, data);
+    }
+  }
+}
+
+function chip(chips, text) {
+  const c = document.createElement('span');
+  c.className = 'chip';
+  c.textContent = text;
+  chips.appendChild(c);
+}
+
+function flags(el, notes) {
+  for (const n of notes) {
+    const f = document.createElement('div');
+    f.className = 'flag';
+    f.textContent = '⚠ ' + n;
+    el.appendChild(f);
+  }
+}
+
+// The row of language buttons under a finished answer. Pressing one asks the
+// server to restate that same answer -- it never searches again and never
+// answers a second time, so no new facts can appear in a translation.
+function addLangs(el, answerId, sourceLangs) {
+  const body = el.querySelector('.body');
+  const original = el._markdown;
+  const cache = { original };
+
+  const row = document.createElement('div');
+  row.className = 'langs';
+  row.innerHTML = '<span>Read this in</span>';
+
+  const note = document.createElement('div');
+  note.className = 'translated';
+  note.hidden = true;
+
+  const buttons = [];
+  const show = (code, md) => {
+    cache[code] = md;
+    body.innerHTML = render(md);
+    buttons.forEach(b => b.setAttribute('aria-pressed', b.dataset.code === code));
+    const text = code === 'original' ? null
+      : (code !== 'easy' && sourceLangs.includes(code)) ? null
+      : TRANSLATED_NOTE[code];
+    note.hidden = !text;
+    note.textContent = text || '';
+    scroll();
+  };
+
+  const make = (code, label) => {
+    const b = document.createElement('button');
+    b.dataset.code = code;
+    b.textContent = label;
+    b.setAttribute('aria-pressed', code === 'original');
+    b.onclick = async () => {
+      if (cache[code] !== undefined) { show(code, cache[code]); return; }
+      buttons.forEach(x => x.disabled = true);
+      body.classList.add('cursor');
+      let acc = '';
+      const notes = [];
+      try {
+        await consume('/restate', { id: answerId, lang: code }, (kind, data) => {
+          if (kind === 'text') { acc += data; body.innerHTML = render(acc); scroll(); }
+          else if (kind === 'error') { acc = '**Error:** ' + data; body.innerHTML = render(acc); }
+          else if (kind === 'done') { notes.push(...data.notes); }
+        });
+      } catch (err) {
+        acc = '**Error:** ' + err.message;
+      }
+      body.classList.remove('cursor');
+      buttons.forEach(x => x.disabled = false);
+      show(code, acc);
+      flags(el, notes);
+    };
+    row.appendChild(b);
+    buttons.push(b);
+    return b;
+  };
+
+  make('original', 'Original');
+  LANGS.forEach(l => make(l.code, l.label));
+
+  el.appendChild(row);
+  el.appendChild(note);
+}
+
 async function send(e) {
   e.preventDefault();
   const text = box.value.trim();
@@ -219,71 +379,41 @@ async function send(e) {
 
   let acc = '';
   try {
-    const res = await fetch('/', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ message: text }),
-    });
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const parts = buf.split('\n\n');
-      buf = parts.pop();
-      for (const part of parts) {
-        if (!part.startsWith('data: ')) continue;
-        const { kind, data } = JSON.parse(part.slice(6));
-
-        if (kind === 'search') {
-          const c = document.createElement('span');
-          c.className = 'chip';
-          c.textContent = 'searched: ' + data;
-          chips.appendChild(c);
-        } else if (kind === 'guardrail') {
-          const c = document.createElement('span');
-          c.className = 'chip';
-          c.textContent = 'safety rule: ' + data + ' — did not search';
-          chips.appendChild(c);
-        } else if (kind === 'limit') {
-          const c = document.createElement('span');
-          c.className = 'chip';
-          c.textContent = data === 'session' ? 'message limit reached' : 'daily limit reached';
-          chips.appendChild(c);
-        } else if (kind === 'text') {
-          acc += data;
-          body.innerHTML = render(acc);
-        } else if (kind === 'error') {
-          body.innerHTML = '<p style="color:var(--accent)">Error: ' + data + '</p>';
-        } else if (kind === 'done') {
-          if (data.sources.length) {
-            // The age badge is rendered from the date, not from anything the
-            // model wrote. If it forgets to mention how old an article is,
-            // this still says so.
-            const label = { stale: 'out of date — check before acting',
-                            aging: 'worth confirming' };
-            const s = document.createElement('div');
-            s.className = 'sources';
-            s.innerHTML = '<div><b>Sources</b></div>' + data.sources.map(x =>
-              '<div>· <a href="' + x.url + '" target="_blank" rel="noopener">'
-              + x.title + '</a> — ' + x.lang.toUpperCase()
-              + '<span class="age ' + x.staleness + '">updated ' + x.last_updated
-              + ' · ' + x.age + (label[x.staleness] ? ' · ' + label[x.staleness] : '')
-              + '</span></div>').join('');
-            el.appendChild(s);
-          }
-          for (const n of data.notes) {
-            const f = document.createElement('div');
-            f.className = 'flag';
-            f.textContent = '⚠ ' + n;
-            el.appendChild(f);
-          }
+    await consume('/', { message: text }, (kind, data) => {
+      if (kind === 'guardrail') {
+        chip(chips, 'safety rule: ' + data + ' — did not search');
+      } else if (kind === 'limit') {
+        chip(chips, data === 'session' ? 'message limit reached' : 'daily limit reached');
+      } else if (kind === 'text') {
+        acc += data;
+        body.innerHTML = render(acc);
+      } else if (kind === 'error') {
+        body.innerHTML = '<p style="color:var(--accent)">Error: ' + data + '</p>';
+      } else if (kind === 'done') {
+        if (data.sources.length) {
+          // The age badge is rendered from the date, not from anything the
+          // model wrote. If it forgets to mention how old an article is,
+          // this still says so.
+          const label = { stale: 'out of date — check before acting',
+                          aging: 'worth confirming' };
+          const s = document.createElement('div');
+          s.className = 'sources';
+          s.innerHTML = '<div><b>Sources</b></div>' + data.sources.map(x =>
+            '<div>· <a href="' + x.url + '" target="_blank" rel="noopener">'
+            + x.title + '</a> — ' + x.lang.toUpperCase()
+            + '<span class="age ' + x.staleness + '">updated ' + x.last_updated
+            + ' · ' + x.age + (label[x.staleness] ? ' · ' + label[x.staleness] : '')
+            + '</span></div>').join('');
+          el.appendChild(s);
         }
-        scroll();
+        flags(el, data.notes);
+        if (data.id !== undefined && data.id !== null) {
+          el._markdown = acc;
+          addLangs(el, data.id, data.source_langs || []);
+        }
       }
-    }
+      scroll();
+    });
   } catch (err) {
     body.innerHTML = '<p style="color:var(--accent)">Error: ' + err.message + '</p>';
   }

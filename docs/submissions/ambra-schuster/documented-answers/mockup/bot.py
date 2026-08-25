@@ -201,6 +201,67 @@ SEARCH_TOOL = {
 }
 
 
+# ---- restating an answer in another language ---------------------------
+#
+# This is a rewrite, not a second answer. The model gets the finished text
+# and nothing else -- no search tool, no corpus, no conversation. It cannot
+# look anything up, so it cannot add anything, which is the only reason a
+# translation is allowed to exist in a bot whose whole promise is that it
+# only says what Documented published.
+#
+# The grounding check still runs on the output. A translation that invents a
+# link gets flagged exactly like an original answer would.
+
+LANGUAGES = {
+    "easy": {
+        "label": "Easy English",
+        "instruction": (
+            "Target: Easy English. Same language, much simpler.\n\n"
+            "Short sentences, one idea each. Everyday words instead of "
+            "official ones -- 'money help' rather than 'cash assistance', "
+            "with the official term in brackets the first time, because they "
+            "will meet the official term on the form. Spell out an acronym "
+            "the first time it appears. Write for someone reading English as "
+            "their second or third language, or in a hurry, or on a phone at "
+            "a bus stop.\n\n"
+            "Simplifying means shorter sentences, not less information. Every "
+            "phone number, address, program name, dollar figure and date "
+            "stays. Do not talk down."
+        ),
+    },
+    "es": {"label": "Español", "instruction": "Target: Spanish. Translate the whole answer into natural Latin American Spanish -- the Spanish a New York newsroom writes for its readers, not textbook Spanish."},
+    "ht": {"label": "Kreyòl Ayisyen", "instruction": "Target: Haitian Creole (Kreyòl Ayisyen). Translate the whole answer into natural Haitian Creole as written for Haitian New Yorkers."},
+    "zh": {"label": "中文", "instruction": "Target: Simplified Chinese (简体中文). Translate the whole answer into natural Simplified Chinese as written for Chinese-speaking New Yorkers."},
+}
+
+RESTATE = """You are restating an answer that Documented's resource assistant \
+has already given. You are not answering the question again.
+
+You have no sources in front of you and no way to look anything up. Whatever \
+is in the text you are given is all there is.
+
+## Rules, in order of importance
+
+1. **Add no facts.** No program, organisation, phone number, address, dollar \
+   amount, date, deadline or eligibility rule may appear in your version \
+   unless it is in the original. If the original is missing something \
+   obvious, it stays missing. You may not help.
+2. **Drop no facts.** Everything specific in the original carries over.
+3. **Keep every link exactly.** Markdown links look like [text](url). \
+   Translate the text; never alter the url, not one character. Add no links.
+4. **Keep the dates and the age warnings.** If the original says an article \
+   is three years old and may be out of date, yours says so too, just as \
+   early and just as plainly. This is the part people skip. Do not let it \
+   get lost in translation.
+5. **Keep proper nouns in their original form** -- Promise NYC, ActionNYC, \
+   MySchools, 3-K, IDNYC, SNAP. Add a short gloss in brackets on first use \
+   if it helps. Someone will have to say these names out loud to a \
+   receptionist who only knows them in English.
+6. **Keep the shape** -- same bullets, same order, same emphasis.
+
+Output only the restated answer. No preamble, no note about what you did."""
+
+
 class Bot:
     def __init__(self, index=None):
         self.client = anthropic.Anthropic(api_key=load_key())
@@ -210,6 +271,9 @@ class Bot:
         self.corpus_links = self.index.all_links()
         self._corpus_norm = {Bot._norm(u) for u in self.corpus_links}
         self.history = []
+        # Finished answers, so a language button can restate one later.
+        # Each is {"text", "retrieved", "versions": {lang: text}}.
+        self.answers = []
 
     # ---- context and cost ----------------------------------------------
 
@@ -327,6 +391,70 @@ class Bot:
             invented.append(url)
         return invented
 
+    # ---- restating a finished answer -----------------------------------
+
+    def _remember(self, text, retrieved):
+        """Keep a finished answer so a language button can restate it."""
+        self.answers.append({"text": text, "retrieved": list(retrieved), "versions": {}})
+        return len(self.answers) - 1
+
+    def source_languages(self, answer_id):
+        """Which languages the articles behind an answer were written in."""
+        try:
+            return {r["lang"] for r in self.answers[answer_id]["retrieved"]}
+        except (IndexError, TypeError):
+            return set()
+
+    def restate_stream(self, answer_id, target):
+        """Re-render a past answer in `target`. Yields the same event shapes
+        as ask_stream, so the page handles both the same way."""
+        if target not in LANGUAGES:
+            yield ("error", f"unknown language: {target}")
+            return
+        try:
+            answer = self.answers[answer_id]
+        except (IndexError, TypeError):
+            yield ("error", "that answer is no longer in this conversation")
+            return
+
+        cached = answer["versions"].get(target)
+        if cached:
+            # Clicking the same button twice should not cost anything.
+            yield ("text", cached)
+            yield ("done", {"sources": [], "notes": [], "cached": True})
+            return
+
+        out = ""
+        with self.client.messages.stream(
+            model=MODEL,
+            max_tokens=4000,
+            system=[{
+                "type": "text",
+                "text": RESTATE + "\n\n" + LANGUAGES[target]["instruction"],
+                "cache_control": {"type": "ephemeral"},
+            }],
+            messages=[{"role": "user", "content": answer["text"]}],
+        ) as stream:
+            for delta in stream.text_stream:
+                out += delta
+                yield ("text", delta)
+            stream.get_final_message()
+
+        answer["versions"][target] = out
+
+        notes = []
+        invented = self.check_grounding(out, answer["retrieved"])
+        if invented:
+            notes.append("links not found in Documented's articles: " + ", ".join(invented))
+        # A link that quietly disappears in translation is the other failure
+        # mode, and it is easy to miss because the text still reads fine.
+        before = set(re.findall(r"\]\((https?://[^\s)]+)\)", answer["text"]))
+        after = set(re.findall(r"\]\((https?://[^\s)]+)\)", out))
+        if before - after:
+            notes.append("links dropped in translation: " + ", ".join(sorted(before - after)))
+
+        yield ("done", {"sources": [], "notes": notes, "cached": False})
+
     # ---- one turn ------------------------------------------------------
 
     def ask(self, message, on_search=None):
@@ -409,9 +537,13 @@ class Bot:
         if blocked:
             self.history.append({"role": "user", "content": message})
             self.history.append({"role": "assistant", "content": blocked["reply"]})
+            aid = self._remember(blocked["reply"], [])
             yield ("guardrail", blocked["rule"])
             yield ("text", blocked["reply"])
-            yield ("done", {"sources": [], "notes": [f"guardrail: {blocked['rule']}"]})
+            yield ("done", {
+                "sources": [], "notes": [f"guardrail: {blocked['rule']}"],
+                "id": aid, "source_langs": [],
+            })
             return
 
         self.history.append({"role": "user", "content": message})
@@ -470,7 +602,14 @@ class Bot:
                         "staleness": r["staleness"],
                         "lang": r["lang"],
                     })
-        yield ("done", {"sources": cited, "notes": notes})
+        aid = self._remember(reply, retrieved)
+        yield ("done", {
+            "sources": cited, "notes": notes, "id": aid,
+            # Which languages this answer's articles were actually written
+            # in. The page uses it to say "this was translated" when someone
+            # asks for a language Documented's own article was not in.
+            "source_langs": sorted({r["lang"] for r in retrieved}),
+        })
 
 
 if __name__ == "__main__":

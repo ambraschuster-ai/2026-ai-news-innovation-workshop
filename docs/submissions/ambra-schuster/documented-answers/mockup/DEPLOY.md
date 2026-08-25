@@ -86,10 +86,18 @@ code change:
 
 | variable | default | what it does |
 |---|---|---|
-| `MAX_PER_SESSION` | 15 | messages per visitor before it stops and tells them |
-| `MAX_PER_DAY` | 150 | total messages across everyone, resets at UTC midnight |
+| `MAX_PER_SESSION` | 15 | questions per visitor before it stops and tells them |
+| `MAX_RESTATE_PER_SESSION` | 24 | language-button presses per visitor |
+| `MAX_PER_DAY` | 150 | everything across everyone, resets at UTC midnight |
 
-Both fail closed — when the budget is gone, no API call is made at all.
+All three fail closed — when the budget is gone, no API call is made at all.
+
+Language buttons get their own allowance rather than eating the question
+budget: four buttons under every answer means a curious visitor could
+otherwise spend a whole session translating without asking a second question.
+They are cheaper too — about **$0.02** a press against **$0.06** a question,
+because a restatement makes one call and runs no searches. Pressing the same
+button twice is free; the version is kept in the session and re-served.
 
 ---
 

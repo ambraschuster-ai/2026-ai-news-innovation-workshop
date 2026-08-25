@@ -40,6 +40,14 @@ MAX_PER_SESSION = int(os.environ.get("MAX_PER_SESSION", 15))
 MAX_PER_DAY = int(os.environ.get("MAX_PER_DAY", 150))
 SESSION_TTL = 60 * 60  # an hour of inactivity and the conversation is dropped
 
+# Language buttons get their own allowance rather than eating the message
+# budget. Four buttons under every answer means a curious visitor could burn
+# a fifteen-message session on translations without ever asking a second
+# question -- which would be a bad demo and an unfair limit. They are cheaper
+# than questions too: one call, no search, and a repeat click is served from
+# memory for nothing.
+MAX_RESTATE_PER_SESSION = int(os.environ.get("MAX_RESTATE_PER_SESSION", 24))
+
 _lock = threading.Lock()
 _sessions = {}       # sid -> {"bot": Bot, "count": int, "seen": float}
 
@@ -89,6 +97,16 @@ def _reap():
         del _sessions[sid]
 
 
+def _session(sid):
+    """The visitor's conversation, created on first sight. Caller holds _lock."""
+    s = _sessions.get(sid)
+    if s is None:
+        s = _sessions[sid] = {
+            "bot": Bot(index=INDEX), "count": 0, "restated": 0, "seen": time.time(),
+        }
+    return s
+
+
 def take_turn_budget(sid):
     """Claim one message. Returns (ok, reason). Fails closed."""
     with _lock:
@@ -98,14 +116,43 @@ def take_turn_budget(sid):
         if _day["count"] >= MAX_PER_DAY:
             return False, "daily"
 
-        s = _sessions.get(sid)
-        if s is None:
-            s = _sessions[sid] = {"bot": Bot(index=INDEX), "count": 0, "seen": time.time()}
+        s = _session(sid)
         if s["count"] >= MAX_PER_SESSION:
             return False, "session"
 
         s["count"] += 1
         s["seen"] = time.time()
+        _day["count"] += 1
+        _save_day(_day)
+        return True, None
+
+
+def take_restate_budget(sid, answer_id, target):
+    """Claim one language-button press. Returns (ok, reason). Fails closed.
+
+    A press that will be served from the session's cache costs nothing and is
+    not charged -- otherwise switching back and forth between two languages
+    to compare them, which is the natural thing to do, would be punished.
+    """
+    with _lock:
+        _reap()
+        s = _session(sid)
+        s["seen"] = time.time()
+
+        try:
+            if s["bot"].answers[answer_id]["versions"].get(target):
+                return True, None
+        except (IndexError, TypeError):
+            pass  # unknown answer; let the bot report it properly
+
+        if _day["date"] != _today():
+            _day.update(date=_today(), count=0)
+        if _day["count"] >= MAX_PER_DAY:
+            return False, "daily"
+        if s["restated"] >= MAX_RESTATE_PER_SESSION:
+            return False, "restate"
+
+        s["restated"] += 1
         _day["count"] += 1
         _save_day(_day)
         return True, None
@@ -118,6 +165,12 @@ student prototype running on a small budget, not a real service.
 
 And a reminder: for anything that actually matters, call **311** and ask for \
 **ActionNYC** — free immigration legal help, in your language."""
+
+RESTATE_FULL = """You've switched languages as many times as this demo \
+allows in one conversation.
+
+**Click "New conversation"** at the top to start fresh — the answers you \
+already have stay readable in whichever language you last picked."""
 
 DAY_FULL = """This demo has hit its limit for today. It's a student prototype \
 with a fixed daily budget, and enough people have used it that the budget is \
@@ -181,6 +234,10 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
 
+        if self.path == "/restate":
+            self._restate(sid, payload)
+            return
+
         ok, reason = take_turn_budget(sid)
 
         self.send_response(200)
@@ -200,6 +257,34 @@ class Handler(BaseHTTPRequestHandler):
                 for kind, data in bot.ask_stream(payload.get("message", "")):
                     self._event(kind, data)
             except Exception as e:  # noqa: BLE001 -- show it, don't 500 into a blank page
+                self._event("error", type(e).__name__ + ": " + str(e)[:200])
+
+        self.wfile.write(b"0\r\n\r\n")
+        self.wfile.flush()
+
+    def _restate(self, sid, payload):
+        """A language button. Rewrites an answer already given -- never a new
+        one, and never a new search."""
+        answer_id = payload.get("id")
+        target = payload.get("lang")
+        ok, reason = take_restate_budget(sid, answer_id, target)
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Transfer-Encoding", "chunked")
+        self.end_headers()
+
+        if not ok:
+            self._event("limit", reason)
+            self._event("text", RESTATE_FULL if reason == "restate" else DAY_FULL)
+            self._event("done", {"sources": [], "notes": []})
+        else:
+            try:
+                bot = _sessions[sid]["bot"]
+                for kind, data in bot.restate_stream(answer_id, target):
+                    self._event(kind, data)
+            except Exception as e:  # noqa: BLE001
                 self._event("error", type(e).__name__ + ": " + str(e)[:200])
 
         self.wfile.write(b"0\r\n\r\n")
