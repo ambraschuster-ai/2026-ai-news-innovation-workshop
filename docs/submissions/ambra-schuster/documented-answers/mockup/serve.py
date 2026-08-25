@@ -26,7 +26,7 @@ import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from bot import Bot
+from bot import Bot, LANGUAGES
 from search import Index
 
 HOST = "0.0.0.0"
@@ -47,6 +47,25 @@ SESSION_TTL = 60 * 60  # an hour of inactivity and the conversation is dropped
 # than questions too: one call, no search, and a repeat click is served from
 # memory for nothing.
 MAX_RESTATE_PER_SESSION = int(os.environ.get("MAX_RESTATE_PER_SESSION", 24))
+
+# Counting messages is not the same as capping spend. A message is charged by
+# its length, so 150 messages a day is only a budget if a message has a size.
+# Someone pasting a novel into the box -- or a script doing it 150 times --
+# would otherwise run up a bill the daily counter would report as a quiet,
+# well-behaved day. 4,000 characters is far more than anyone types and far
+# less than anyone can do damage with.
+MAX_MESSAGE_CHARS = int(os.environ.get("MAX_MESSAGE_CHARS", 4000))
+
+# Nor is the body of a request the same as the message in it. Content-Length
+# is a number the client picks, and rfile.read() will sit there waiting for
+# as much of it as it is told to.
+MAX_BODY_BYTES = 64 * 1024
+
+# Sessions are keyed by a cookie the visitor supplies, so the number of them
+# is also something the visitor controls. The daily ceiling still holds --
+# a new cookie buys new messages but not new budget -- so this is about
+# memory, not money.
+MAX_SESSIONS = 500
 
 _lock = threading.Lock()
 _sessions = {}       # sid -> {"bot": Bot, "count": int, "seen": float}
@@ -96,6 +115,15 @@ def _reap():
     for sid in [s for s, v in _sessions.items() if v["seen"] < cutoff]:
         del _sessions[sid]
 
+    # If something is minting cookies faster than they expire, drop the
+    # oldest rather than growing without limit. The evicted visitor loses
+    # their conversation, which is a worse experience than the alternative
+    # of the whole thing falling over.
+    if len(_sessions) > MAX_SESSIONS:
+        oldest = sorted(_sessions, key=lambda s: _sessions[s]["seen"])
+        for sid in oldest[: len(_sessions) - MAX_SESSIONS]:
+            del _sessions[sid]
+
 
 def _session(sid):
     """The visitor's conversation, created on first sight. Caller holds _lock."""
@@ -143,7 +171,9 @@ def take_restate_budget(sid, answer_id, target):
             if s["bot"].answers[answer_id]["versions"].get(target):
                 return True, None
         except (IndexError, TypeError):
-            pass  # unknown answer; let the bot report it properly
+            # An answer id this conversation never issued. Nothing to bill --
+            # no API call is coming. restate_stream says so to the visitor.
+            return True, None
 
         if _day["date"] != _today():
             _day.update(date=_today(), count=0)
@@ -185,12 +215,38 @@ class Handler(BaseHTTPRequestHandler):
 
     # -- helpers --
     def _sid(self):
+        """The visitor's session id, from their cookie or newly minted.
+
+        The cookie is whatever the client sends, so it is checked against the
+        shape we issue rather than trusted. Anything else gets a fresh id --
+        which costs the sender nothing and costs us nothing either.
+        """
         cookie = self.headers.get("Cookie", "")
         for part in cookie.split(";"):
             k, _, v = part.strip().partition("=")
-            if k == "sid" and v:
+            if k == "sid" and len(v) == 32 and all(c in "0123456789abcdef" for c in v):
                 return v, False
         return uuid.uuid4().hex, True
+
+    def _body(self):
+        """The request body, or None if it is malformed or oversized."""
+        try:
+            n = int(self.headers.get("Content-Length", 0))
+        except ValueError:
+            return None
+        if n <= 0 or n > MAX_BODY_BYTES:
+            return None if n > MAX_BODY_BYTES else {}
+        try:
+            return json.loads(self.rfile.read(n).decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            return None
+
+    def _plain(self, code, body=b""):
+        self.send_response(code)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def _event(self, kind, data):
         chunk = f"data: {json.dumps({'kind': kind, 'data': data})}\n\n".encode("utf-8")
@@ -222,8 +278,10 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(page)
 
     def do_POST(self):
-        n = int(self.headers.get("Content-Length", 0))
-        payload = json.loads(self.rfile.read(n).decode("utf-8")) if n else {}
+        payload = self._body()
+        if payload is None or not isinstance(payload, dict):
+            self._plain(400, b"bad request")
+            return
         sid, _ = self._sid()
 
         if self.path == "/reset":
@@ -237,6 +295,12 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/restate":
             self._restate(sid, payload)
             return
+
+        message = payload.get("message", "")
+        if not isinstance(message, str):
+            self._plain(400, b"bad request")
+            return
+        message = message.strip()[:MAX_MESSAGE_CHARS]
 
         ok, reason = take_turn_budget(sid)
 
@@ -254,19 +318,40 @@ class Handler(BaseHTTPRequestHandler):
         else:
             try:
                 bot = _sessions[sid]["bot"]
-                for kind, data in bot.ask_stream(payload.get("message", "")):
+                for kind, data in bot.ask_stream(message):
                     self._event(kind, data)
             except Exception as e:  # noqa: BLE001 -- show it, don't 500 into a blank page
                 self._event("error", type(e).__name__ + ": " + str(e)[:200])
 
-        self.wfile.write(b"0\r\n\r\n")
-        self.wfile.flush()
+        self._end_stream()
+
+    def _end_stream(self):
+        """Close a chunked response, tolerating a reader who has walked away.
+
+        Someone closing the tab mid-answer is normal, not an error, and it
+        should not leave a traceback in the log of a server that deliberately
+        keeps no log.
+        """
+        try:
+            self.wfile.write(b"0\r\n\r\n")
+            self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
 
     def _restate(self, sid, payload):
         """A language button. Rewrites an answer already given -- never a new
         one, and never a new search."""
         answer_id = payload.get("id")
         target = payload.get("lang")
+
+        # Check the request is even coherent before charging for it. Taking
+        # the budget first meant a request naming a language that does not
+        # exist spent a message and then failed -- a free way to drain the
+        # daily ceiling without ever getting an answer.
+        if target not in LANGUAGES or not isinstance(answer_id, int) or isinstance(answer_id, bool) or answer_id < 0:
+            self._plain(400, b"bad request")
+            return
+
         ok, reason = take_restate_budget(sid, answer_id, target)
 
         self.send_response(200)
@@ -287,8 +372,7 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:  # noqa: BLE001
                 self._event("error", type(e).__name__ + ": " + str(e)[:200])
 
-        self.wfile.write(b"0\r\n\r\n")
-        self.wfile.flush()
+        self._end_stream()
 
     def log_message(self, *a):
         pass  # deliberately no request log -- see the module docstring
