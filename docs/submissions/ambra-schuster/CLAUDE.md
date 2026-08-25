@@ -35,10 +35,6 @@ Documented's resource articles in English and Spanish. Its Stage 0 in
 important — what it deliberately does not, so the mockup isn't mistaken for
 progress on the real build. Project 1 is paused after its Stage 0.1 rescue.
 
-Not yet decided, and both are mine to make: whether to host on Render (what
-it's built for) or Vercel (what my instructor suggested), and whether the
-page keeps Documented's name and styling.
-
 Read the active project's three files at the start of every session, and
 another project's docs only when I say we're moving to it. Projects 2, 4 and
 5 are written at planning depth, so don't treat their details as settled —
