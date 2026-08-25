@@ -59,6 +59,14 @@ they get rewritten before that project starts.
   it describes.
 - **When something in these files goes stale**, update it in the same
   commit as the code that made it stale.
+- **Keep this file about *how to work*, not about *where the project is*.**
+  Status, open decisions, what's blocked, what's left to do — all of that
+  lives in the active project's three files, which this file already points
+  at. The only project state that belongs here is the Status column in the
+  table above, because that's an index of where to look, not a description
+  of the work. Test before writing anything here: *does this stop being
+  true once the project moves forward?* If yes, it goes in `tasks.md`. A
+  fact written in two places goes stale in one of them.
 
 ## How to explain things to me
 
